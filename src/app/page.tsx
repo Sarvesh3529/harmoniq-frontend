@@ -1,6 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { db } from "../lib/firebase";
@@ -23,7 +25,9 @@ import {
   X,
   Search,
   Menu,
-  LogIn
+  LogIn,
+  Download,
+  FileMusic
 } from "lucide-react";
 
 interface Transcription {
@@ -321,10 +325,13 @@ export default function Dashboard() {
   const [error, setError] = useState<string | null>(null);
 
   const [currentTitle, setCurrentTitle] = useState<string | null>(null);
-
   const [currentSheetMusic, setCurrentSheetMusic] = useState<string | null>(null);
+  const [currentMidiBase64, setCurrentMidiBase64] = useState<string | null>(null);
 
   const [isDragActive, setIsDragActive] = useState(false);
+
+  // Ref to the rendered sheet music container for PDF export
+  const sheetContainerRef = useRef<HTMLDivElement | null>(null);
 
   // Sync state history relative data scoped to the active user subcollection
   useEffect(() => {
@@ -378,6 +385,9 @@ export default function Dashboard() {
       setStatus('completed');
       setCurrentTitle(track.title || null);
       setCurrentSheetMusic(track.musicXmlData || `Asset Sheet Record for: ${track.title}`);
+      // midiDataBase64 lives on the full Firestore doc; cast via transcriptions list
+      const fullDoc = transcriptions.find(t => t.id === track.id) as any;
+      setCurrentMidiBase64(fullDoc?.midiDataBase64 || null);
     } else if (track.status === 'failed') {
       setStatus('failed');
       setError(track.errorMessage || track.error_message || "This target transcription track run contains system faults.");
@@ -385,7 +395,7 @@ export default function Dashboard() {
       setStatus('processing');
       setProcessingStep(3);
     }
-  }, []);
+  }, [transcriptions]);
 
   const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -447,7 +457,51 @@ export default function Dashboard() {
     setSelectedTrackId(null);
     setCurrentTitle(null);
     setCurrentSheetMusic(null);
+    setCurrentMidiBase64(null);
   };
+
+  // --- Download handlers ---
+
+  const handleDownloadPdf = useCallback(async () => {
+    const container = sheetContainerRef.current;
+    if (!container) return;
+
+    try {
+      const canvas = await html2canvas(container, {
+        backgroundColor: "#ffffff",
+        scale: 2,
+        useCORS: true,
+      });
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF({
+        orientation: canvas.width > canvas.height ? "landscape" : "portrait",
+        unit: "px",
+        format: [canvas.width / 2, canvas.height / 2],
+      });
+      pdf.addImage(imgData, "PNG", 0, 0, canvas.width / 2, canvas.height / 2);
+      const safeName = (currentTitle || "transcription").replace(/[^a-z0-9_\-. ]/gi, "_");
+      pdf.save(`${safeName}.pdf`);
+    } catch (err) {
+      console.error("PDF export failed:", err);
+    }
+  }, [currentTitle]);
+
+  const handleDownloadMidi = useCallback(() => {
+    if (!currentMidiBase64) return;
+    const binary = atob(currentMidiBase64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    const blob = new Blob([bytes], { type: "audio/midi" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const safeName = (currentTitle || "transcription").replace(/[^a-z0-9_\-. ]/gi, "_");
+    link.href = url;
+    link.download = `${safeName}.mid`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }, [currentMidiBase64, currentTitle]);
 
   const handleUpload = useCallback(async (fileOverride?: File, titleOverride?: string) => {
     const fileToUpload = fileOverride ?? selectedFile;
@@ -492,6 +546,7 @@ export default function Dashboard() {
 
           setCurrentTitle(data.title || resolvedTitle);
           setCurrentSheetMusic(data.musicXmlData || `Backup Sheet Data asset read successfully.`);
+          setCurrentMidiBase64(data.midiDataBase64 || null);
 
           unsubDoc();
         } else if (data?.status === "failed") {
@@ -604,21 +659,50 @@ export default function Dashboard() {
                 <div className="w-full max-w-3xl flex flex-col items-center justify-center space-y-12">
                   {status === 'completed' && currentSheetMusic ? (
                     <div className="w-full space-y-6 animate-in fade-in zoom-in-95 duration-300">
-                      <div className="flex items-center justify-between border-b border-slate-900/60 pb-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-900/60 pb-4">
                         <div>
                           <h2 className="text-xl font-bold tracking-tight text-white">
                             {currentTitle ? currentTitle : "Notation Output"}
                           </h2>
                         </div>
-                        <button
-                          onClick={handleResetWorkspace}
-                          className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-all"
-                        >
-                          <X className="w-5 h-5" />
-                        </button>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {/* Download PDF */}
+                          <button
+                            onClick={handleDownloadPdf}
+                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white text-sm font-semibold shadow shadow-indigo-800/30 transition-all"
+                            title="Download sheet music as PDF"
+                          >
+                            <Download className="w-4 h-4" />
+                            Download PDF
+                          </button>
+                          {/* Download MIDI */}
+                          <button
+                            onClick={handleDownloadMidi}
+                            disabled={!currentMidiBase64}
+                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-purple-500/30 bg-purple-600/10 hover:bg-purple-600/20 active:scale-95 text-purple-300 text-sm font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                            title={currentMidiBase64 ? "Download MIDI file" : "MIDI not available"}
+                          >
+                            <FileMusic className="w-4 h-4" />
+                            Download MIDI
+                          </button>
+                          {/* Reset */}
+                          <button
+                            onClick={handleResetWorkspace}
+                            className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-all"
+                            title="Close result"
+                          >
+                            <X className="w-5 h-5" />
+                          </button>
+                        </div>
                       </div>
 
-                      <ScoreViewer sheetMusicData={currentSheetMusic} />
+                      {/* Sheet music viewer — ref used for PDF capture */}
+                      <div
+                        ref={sheetContainerRef}
+                        className="w-full bg-[#030712]/60 p-4 rounded-xl border border-slate-900/60 min-h-[520px] flex flex-col items-center justify-center overflow-hidden"
+                      >
+                        <SheetMusicViewer musicXmlData={currentSheetMusic} />
+                      </div>
                     </div>
                   ) : (
                     <div className="w-full space-y-8 flex flex-col items-center text-center">
