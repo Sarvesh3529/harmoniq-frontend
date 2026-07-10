@@ -312,8 +312,9 @@ const ScoreViewer: React.FC<{ sheetMusicData?: string | null }> = ({ sheetMusicD
   </div>
 );
 
-const PYTHON_API =
-  process.env.NEXT_PUBLIC_PYTHON_API_URL || "https://sarvesh3529-harmoniq.hf.space/transcribe";
+const PYTHON_API = process.env.NEXT_PUBLIC_PYTHON_API_URL
+  ? `${process.env.NEXT_PUBLIC_PYTHON_API_URL.replace(/\/+$/, "")}/transcribe`
+  : "https://sarvesh3529-harmoniq.hf.space/transcribe";
 const MAX_FILE_SIZE_MB = 5;
 
 export default function Dashboard() {
