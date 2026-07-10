@@ -88,18 +88,22 @@ export function AuthContextProvider({ children }: AuthContextProviderProps) {
           await linkWithPopup(auth.currentUser, provider);
           console.log("Account linked successfully!");
         } catch (linkError: any) {
-          if (linkError.code === "auth/credential-already-in-use") {
-            console.warn("Google account already in use, signing in normally.");
-            await signInWithPopup(auth, provider);
+          console.error("Link error code:", linkError.code, linkError);
+          if (linkError.code === "auth/credential-already-in-use" || linkError.code === "auth/email-already-in-use") {
+            // Prompt user to switch accounts to get user gesture consent, avoiding popup blockers
+            if (confirm("This Google account is already registered. Switch to your existing account? (Note: Your guest runs won't be merged)")) {
+              await signInWithPopup(auth, provider);
+            }
           } else {
-            throw linkError;
+            alert(`Linking failed: ${linkError.message || linkError.code}`);
           }
         }
       } else {
         await signInWithPopup(auth, provider);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Google Sign-In Error:", error);
+      alert(`Sign in failed: ${error.message || error.code}`);
     }
   };
 
