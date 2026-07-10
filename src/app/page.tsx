@@ -59,8 +59,10 @@ interface SidebarProps {
     uid: string;
     displayName: string | null;
     photoURL: string | null;
+    isAnonymous?: boolean;
   } | null;
   logout: () => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -75,7 +77,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   searchQuery,
   setSearchQuery,
   user,
-  logout
+  logout,
+  loginWithGoogle
 }) => {
   return (
     <>
@@ -227,9 +230,15 @@ const Sidebar: React.FC<SidebarProps> = ({
         </button>
 
         <div
-          onClick={() => { if (confirm("Sign out of your session?")) logout(); }}
+          onClick={() => {
+            if (user?.isAnonymous) {
+              loginWithGoogle();
+            } else {
+              if (confirm("Sign out of your session?")) logout();
+            }
+          }}
           className="flex items-center gap-4 p-2 w-full cursor-pointer hover:bg-red-500/5 rounded-xl transition-all group"
-          title="Click to sign out"
+          title={user?.isAnonymous ? "Click to sign in" : "Click to sign out"}
         >
           <div
             className={`h-9 w-9 rounded-full border border-purple-500/30 bg-purple-600/10 flex-shrink-0 overflow-hidden ${isMenuOpen ? "" : "mx-auto"
@@ -248,17 +257,17 @@ const Sidebar: React.FC<SidebarProps> = ({
               />
             ) : (
               <div className="h-9 w-9 rounded-full flex items-center justify-center font-bold text-sm text-purple-500 dark:text-purple-400">
-                {user?.displayName ? user.displayName.charAt(0).toUpperCase() : "U"}
+                {user?.isAnonymous ? "G" : (user?.displayName ? user.displayName.charAt(0).toUpperCase() : "U")}
               </div>
             )}
           </div>
           {isMenuOpen && (
             <div className="flex flex-col min-w-0 flex-1">
               <span className="text-sm font-medium text-slate-700 dark:text-slate-300 truncate group-hover:text-red-500 dark:group-hover:text-red-400">
-                {user?.displayName || "User"}
+                {user?.isAnonymous ? "Guest User" : (user?.displayName || "User")}
               </span>
               <span className="text-[10px] text-slate-500 truncate group-hover:text-red-600/70 dark:group-hover:text-red-500/70">
-                Sign out
+                {user?.isAnonymous ? "Sign in to save runs" : "Sign out"}
               </span>
             </div>
           )}
@@ -587,32 +596,12 @@ export default function Dashboard() {
     }
   }, [selectedFile, user, isUploading]);
 
-  if (authLoading) {
+  if (authLoading || !user) {
     return (
       <div className="min-h-screen w-screen bg-slate-50 dark:bg-[#02040a] flex flex-col items-center justify-center space-y-4">
         <div className="w-10 h-10 rounded-full border-2 border-purple-500/20 border-t-purple-500 animate-spin" />
         <p className="text-xs text-slate-500 tracking-wider uppercase font-medium">Validating Session...</p>
       </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <main className="min-h-screen w-screen bg-slate-50 text-slate-900 dark:bg-[#02040a] dark:text-slate-100 flex items-center justify-center relative overflow-hidden">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-purple-600/10 blur-[120px] pointer-events-none rounded-full" />
-        <div className="w-full max-w-sm bg-white/[0.02] border border-white/5 rounded-3xl p-8 text-center space-y-6 relative z-10 backdrop-blur-xl shadow-2xl">
-          <div className="space-y-2">
-            <h1 className="text-2xl font-bold tracking-tight text-white">Welcome to Harmoniq</h1>
-            <p className="text-xs text-slate-400">Sign in to save execution runs and view transcription structural asset histories.</p>
-          </div>
-          <button
-            onClick={loginWithGoogle}
-            className="w-full py-3 px-4 bg-purple-600 hover:bg-purple-500 text-white font-medium text-sm rounded-xl transition-all shadow-lg shadow-purple-950/20 flex items-center justify-center gap-2 active:scale-95"
-          >
-            <LogIn className="w-4 h-4" /> Sign In with Google
-          </button>
-        </div>
-      </main>
     );
   }
 
@@ -633,6 +622,7 @@ export default function Dashboard() {
         setSearchQuery={setSearchQuery}
         user={user}
         logout={logout}
+        loginWithGoogle={loginWithGoogle}
       />
 
       <div
@@ -647,7 +637,20 @@ export default function Dashboard() {
           <div className="text-xs uppercase tracking-widest text-slate-500 font-bold opacity-80">
             Workspace
           </div>
-          <div />
+          <div>
+            {user?.isAnonymous ? (
+              <button
+                onClick={loginWithGoogle}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 active:scale-95 text-white text-sm font-semibold shadow shadow-purple-950/20 transition-all"
+                title="Sign In with Google to save history across devices"
+              >
+                <LogIn className="w-4 h-4" />
+                Sign In
+              </button>
+            ) : (
+              <div />
+            )}
+          </div>
         </header>
 
         <section className="flex-1 w-full flex flex-col items-center justify-center px-6 md:px-12 pb-24 pt-12 relative z-10">

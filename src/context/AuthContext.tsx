@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup, User } from "firebase/auth";
+import { onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup, User, signInAnonymously, linkWithPopup } from "firebase/auth";
 import { doc, setDoc, increment, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "../lib/firebase"; // Make sure db is exported from your firebase config file
 
@@ -32,10 +32,10 @@ export function AuthContextProvider({ children }: AuthContextProviderProps) {
   useEffect(() => {
     // Firebase auth state listener
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser);
-      
       if (currentUser) {
-        // Sync user details to Firestore using their permanent Google UID
+        setUser(currentUser);
+        
+        // Sync user details to Firestore
         const userRef = doc(db, "users", currentUser.uid);
         
         try {
@@ -44,8 +44,8 @@ export function AuthContextProvider({ children }: AuthContextProviderProps) {
             {
               uid: currentUser.uid,
               name: currentUser.displayName || "Anonymous User",
-              email: currentUser.email,
-              photoURL: currentUser.photoURL,
+              email: currentUser.email || null,
+              photoURL: currentUser.photoURL || null,
               role: "user", // Default security role assignment
               lastLoginAt: serverTimestamp(), // Records exact server time of active session
               loginCount: increment(1), // Increments cleanly without reading the document first
@@ -56,9 +56,17 @@ export function AuthContextProvider({ children }: AuthContextProviderProps) {
         } catch (error) {
           console.error("Error syncing user data to Firestore:", error);
         }
+        setLoading(false);
+      } else {
+        // Sign in anonymously if there is no current user session
+        try {
+          console.log("No current user session. Signing in anonymously...");
+          await signInAnonymously(auth);
+        } catch (error) {
+          console.error("Anonymous Sign-In Error:", error);
+          setLoading(false);
+        }
       }
-      
-      setLoading(false);
     });
 
     // Unsubscribe from the listener when the provider unmounts
@@ -74,7 +82,22 @@ export function AuthContextProvider({ children }: AuthContextProviderProps) {
     });
 
     try {
-      await signInWithPopup(auth, provider);
+      if (auth.currentUser && auth.currentUser.isAnonymous) {
+        console.log("Linking anonymous user to Google account...");
+        try {
+          await linkWithPopup(auth.currentUser, provider);
+          console.log("Account linked successfully!");
+        } catch (linkError: any) {
+          if (linkError.code === "auth/credential-already-in-use") {
+            console.warn("Google account already in use, signing in normally.");
+            await signInWithPopup(auth, provider);
+          } else {
+            throw linkError;
+          }
+        }
+      } else {
+        await signInWithPopup(auth, provider);
+      }
     } catch (error) {
       console.error("Google Sign-In Error:", error);
     }
