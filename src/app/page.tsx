@@ -336,6 +336,7 @@ export default function Dashboard() {
   const [currentTitle, setCurrentTitle] = useState<string | null>(null);
   const [currentSheetMusic, setCurrentSheetMusic] = useState<string | null>(null);
   const [currentMidiBase64, setCurrentMidiBase64] = useState<string | null>(null);
+  const [currentMidiUrl, setCurrentMidiUrl] = useState<string | null>(null);
 
   const [isDragActive, setIsDragActive] = useState(false);
 
@@ -397,6 +398,7 @@ export default function Dashboard() {
       // midiDataBase64 lives on the full Firestore doc; cast via transcriptions list
       const fullDoc = transcriptions.find(t => t.id === track.id) as any;
       setCurrentMidiBase64(fullDoc?.midiDataBase64 || null);
+      setCurrentMidiUrl(track.midiUrl || fullDoc?.midiUrl || null);
     } else if (track.status === 'failed') {
       setStatus('failed');
       setError(track.errorMessage || track.error_message || "This target transcription track run contains system faults.");
@@ -467,6 +469,7 @@ export default function Dashboard() {
     setCurrentTitle(null);
     setCurrentSheetMusic(null);
     setCurrentMidiBase64(null);
+    setCurrentMidiUrl(null);
   };
 
   // --- Download handlers ---
@@ -496,21 +499,32 @@ export default function Dashboard() {
   }, [currentTitle]);
 
   const handleDownloadMidi = useCallback(() => {
-    if (!currentMidiBase64) return;
-    const binary = atob(currentMidiBase64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) {
-      bytes[i] = binary.charCodeAt(i);
-    }
-    const blob = new Blob([bytes], { type: "audio/midi" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
     const safeName = (currentTitle || "transcription").replace(/[^a-z0-9_\-. ]/gi, "_");
-    link.href = url;
+
+    if (currentMidiBase64) {
+      const binary = atob(currentMidiBase64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      const blob = new Blob([bytes], { type: "audio/midi" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${safeName}.mid`;
+      link.click();
+      URL.revokeObjectURL(url);
+      return;
+    }
+
+    if (!currentMidiUrl) return;
+    const link = document.createElement("a");
+    link.href = currentMidiUrl;
     link.download = `${safeName}.mid`;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
     link.click();
-    URL.revokeObjectURL(url);
-  }, [currentMidiBase64, currentTitle]);
+  }, [currentMidiBase64, currentMidiUrl, currentTitle]);
 
   const handleUpload = useCallback(async (fileOverride?: File, titleOverride?: string) => {
     const fileToUpload = fileOverride ?? selectedFile;
@@ -556,6 +570,7 @@ export default function Dashboard() {
           setCurrentTitle(data.title || resolvedTitle);
           setCurrentSheetMusic(data.musicXmlData || `Backup Sheet Data asset read successfully.`);
           setCurrentMidiBase64(data.midiDataBase64 || null);
+          setCurrentMidiUrl(data.midiUrl || null);
 
           unsubDoc();
         } else if (data?.status === "failed") {
@@ -681,9 +696,9 @@ export default function Dashboard() {
                           {/* Download MIDI */}
                           <button
                             onClick={handleDownloadMidi}
-                            disabled={!currentMidiBase64}
+                            disabled={!currentMidiBase64 && !currentMidiUrl}
                             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-purple-500/30 bg-purple-600/10 hover:bg-purple-600/20 active:scale-95 text-purple-300 text-sm font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                            title={currentMidiBase64 ? "Download MIDI file" : "MIDI not available"}
+                            title={currentMidiBase64 || currentMidiUrl ? "Download MIDI file" : "MIDI not available"}
                           >
                             <FileMusic className="w-4 h-4" />
                             Download MIDI
