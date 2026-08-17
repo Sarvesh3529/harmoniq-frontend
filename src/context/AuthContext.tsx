@@ -69,6 +69,17 @@ export function AuthContextProvider({ children }: AuthContextProviderProps) {
         // 2. Upsert the same profile into Supabase public.users
         if (supabaseClient) {
           try {
+            let currentCount = 0;
+            const { data: existingUser } = await supabaseClient
+              .from("users")
+              .select("login_count, loginCount")
+              .eq("uid", currentUser.uid)
+              .maybeSingle();
+
+            if (existingUser) {
+              currentCount = existingUser.login_count ?? existingUser.loginCount ?? 0;
+            }
+
             const { error: sbErr } = await supabaseClient
               .from("users")
               .upsert(
@@ -79,6 +90,7 @@ export function AuthContextProvider({ children }: AuthContextProviderProps) {
                   photo_url: currentUser.photoURL ?? null,
                   role: "user",
                   last_login_at: new Date().toISOString(),
+                  login_count: currentCount + 1,
                 },
                 { onConflict: "uid" }
               );
