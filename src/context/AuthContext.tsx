@@ -3,7 +3,17 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup, User, signInAnonymously, linkWithPopup } from "firebase/auth";
 import { doc, setDoc, increment, serverTimestamp } from "firebase/firestore";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { auth, db } from "../lib/firebase"; // Make sure db is exported from your firebase config file
+
+// --- Supabase client (frontend, anon key only) ---
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
+
+let supabaseClient: SupabaseClient | null = null;
+if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+  supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+}
 
 // Define the interface for our context state
 interface AuthContextType {
@@ -34,10 +44,9 @@ export function AuthContextProvider({ children }: AuthContextProviderProps) {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
         setUser(currentUser);
-        
-        // Sync user details to Firestore
+
+        // 1. Sync user details to Firestore (existing behaviour)
         const userRef = doc(db, "users", currentUser.uid);
-        
         try {
           await setDoc(
             userRef,
@@ -46,16 +55,43 @@ export function AuthContextProvider({ children }: AuthContextProviderProps) {
               name: currentUser.displayName || "Anonymous User",
               email: currentUser.email || null,
               photoURL: currentUser.photoURL || null,
-              role: "user", // Default security role assignment
-              lastLoginAt: serverTimestamp(), // Records exact server time of active session
-              loginCount: increment(1), // Increments cleanly without reading the document first
+              role: "user",
+              lastLoginAt: serverTimestamp(),
+              loginCount: increment(1),
             },
-            { merge: true } // Keeps existing data safe when fields update
+            { merge: true }
           );
-          console.log("User profile synced with database successfully.");
+          console.log("User profile synced with Firestore successfully.");
         } catch (error) {
           console.error("Error syncing user data to Firestore:", error);
         }
+
+        // 2. Upsert the same profile into Supabase public.users
+        if (supabaseClient) {
+          try {
+            const { error: sbErr } = await supabaseClient
+              .from("users")
+              .upsert(
+                {
+                  uid: currentUser.uid,
+                  name: currentUser.displayName || "Anonymous User",
+                  email: currentUser.email ?? null,
+                  photo_url: currentUser.photoURL ?? null,
+                  role: "user",
+                  last_login_at: new Date().toISOString(),
+                },
+                { onConflict: "uid" }
+              );
+            if (sbErr) {
+              console.warn("Supabase user profile upsert failed:", sbErr.message);
+            } else {
+              console.log("User profile synced with Supabase successfully.");
+            }
+          } catch (err) {
+            console.warn("Supabase user profile sync error:", err);
+          }
+        }
+
         setLoading(false);
       } else {
         // Sign in anonymously if there is no current user session

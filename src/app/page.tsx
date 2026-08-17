@@ -586,6 +586,10 @@ export default function Dashboard() {
       formData.append("firestoreId", docId);
       formData.append("userId", user.uid);
       formData.append("title", resolvedTitle);
+      // Send user profile metadata so the backend can upsert into Supabase public.users
+      if (user.displayName) formData.append("userName", user.displayName);
+      if (user.email) formData.append("userEmail", user.email);
+      if (user.photoURL) formData.append("userPhotoUrl", user.photoURL);
 
       console.log(`Dispatching upload for Track ID: ${docId} under User: ${user.uid}`);
 
