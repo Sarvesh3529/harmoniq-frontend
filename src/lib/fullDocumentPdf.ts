@@ -3,6 +3,7 @@ import { svg2pdf } from "svg2pdf.js";
 
 const A4_WIDTH_MM = 210;
 const A4_HEIGHT_MM = 297;
+const TEMPO_FONT_SIZE_PT = 14;
 
 type OsmdPageBackend = {
   getSvgElement?: () => SVGSVGElement | null;
@@ -15,6 +16,12 @@ type OsmdForExport = {
   load: (content: string) => Promise<unknown>;
   render: () => void;
   clear?: () => void;
+};
+
+type TempoAnnotation = {
+  text: string;
+  x: number;
+  y: number;
 };
 
 function safeFileName(name: string): string {
@@ -41,11 +48,73 @@ function getRenderedSvgPages(host: HTMLElement, osmd: OsmdForExport): SVGSVGElem
   return Array.from(host.querySelectorAll<SVGSVGElement>('svg[id^="osmdSvgPage"]'));
 }
 
+function getTempoAnnotations(page: SVGSVGElement): TempoAnnotation[] {
+  return Array.from(page.querySelectorAll<SVGTextElement>("text"))
+    .map((node) => {
+      const rawText = node.textContent?.replace(/\s+/g, " ").trim() ?? "";
+      const x = Number.parseFloat(node.getAttribute("x") ?? "");
+      const y = Number.parseFloat(node.getAttribute("y") ?? "");
+
+      if (!rawText.startsWith("=") || !Number.isFinite(x) || !Number.isFinite(y)) {
+        return null;
+      }
+
+      return { text: rawText, x, y };
+    })
+    .filter((annotation): annotation is TempoAnnotation => annotation !== null);
+}
+
+function removeTempoTextNodes(page: SVGSVGElement): TempoAnnotation[] {
+  const tempoAnnotations = getTempoAnnotations(page);
+  if (tempoAnnotations.length === 0) {
+    return [];
+  }
+
+  page.querySelectorAll<SVGTextElement>("text").forEach((node) => {
+    const rawText = node.textContent?.replace(/\s+/g, " ").trim() ?? "";
+    if (rawText.startsWith("=")) {
+      node.textContent = "";
+    }
+  });
+
+  return tempoAnnotations;
+}
+
+function drawTempoAnnotations(
+  pdf: jsPDF,
+  page: SVGSVGElement,
+  tempoAnnotations: TempoAnnotation[],
+): void {
+  if (tempoAnnotations.length === 0) {
+    return;
+  }
+
+  const svgWidth = Number.parseFloat(page.getAttribute("width") ?? "");
+  const svgHeight = Number.parseFloat(page.getAttribute("height") ?? "");
+  if (!Number.isFinite(svgWidth) || !Number.isFinite(svgHeight) || svgWidth <= 0 || svgHeight <= 0) {
+    return;
+  }
+
+  pdf.setFont("times", "normal");
+  pdf.setFontSize(TEMPO_FONT_SIZE_PT);
+  pdf.setTextColor(0, 0, 0);
+
+  const scaleX = A4_WIDTH_MM / svgWidth;
+  const scaleY = A4_HEIGHT_MM / svgHeight;
+  tempoAnnotations.forEach(({ text, x, y }) => {
+    pdf.text(text, x * scaleX, y * scaleY);
+  });
+}
+
 /**
  * Render the MusicXML in a clean, fixed A4 OSMD instance and export each OSMD
  * SVG page directly to PDF. This deliberately does not capture the UI scroll
  * container: OSMD's drawer owns the complete page list, so no systems can be
  * clipped by CSS overflow or rasterized at an arbitrary viewport size.
+ *
+ * OSMD's tempo text is present in the SVG but is not reliably painted by
+ * svg2pdf.js. Tempo text nodes are therefore removed before conversion and
+ * redrawn as PDF text at their original SVG coordinates.
  */
 export async function downloadFullDocumentPdf(
   musicXmlData: string,
@@ -107,12 +176,14 @@ export async function downloadFullDocumentPdf(
       }
 
       page.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+      const tempoAnnotations = removeTempoTextNodes(page);
       await svg2pdf(page, pdf, {
         x: 0,
         y: 0,
         width: A4_WIDTH_MM,
         height: A4_HEIGHT_MM,
       });
+      drawTempoAnnotations(pdf, page, tempoAnnotations);
     }
 
     pdf.save(`${safeFileName(title)}.pdf`);
