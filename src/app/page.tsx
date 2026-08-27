@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { downloadFullDocumentPdf } from "../lib/fullDocumentPdf";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { db } from "../lib/firebase";
 import AudioUploader from '../components/AudioUploader';
-import SheetMusicViewer from "../components/SheetMusicViewer";
+import SheetMusicViewer, { enforcePianoGrandStaff } from "../components/SheetMusicViewer";
 import {
   collection,
   addDoc,
@@ -339,8 +339,6 @@ export default function Dashboard() {
 
   const [isDragActive, setIsDragActive] = useState(false);
 
-  // Ref to the complete rendered sheet music container for PDF export
-  const sheetContainerRef = useRef<HTMLDivElement | null>(null);
 
   // Sync state history relative data scoped to the active user subcollection
   useEffect(() => {
@@ -474,16 +472,19 @@ export default function Dashboard() {
   // --- Download handlers ---
 
   const handleDownloadPdf = useCallback(async () => {
-    const container = sheetContainerRef.current;
-    if (!container) return;
+    if (!currentSheetMusic) return;
 
     try {
-      await downloadFullDocumentPdf(container, currentTitle || "transcription");
+      await downloadFullDocumentPdf(
+        currentSheetMusic,
+        currentTitle || "transcription",
+        enforcePianoGrandStaff,
+      );
     } catch (err) {
       console.error("Full PDF export failed:", err);
       setError("The complete sheet-music PDF could not be generated.");
     }
-  }, [currentTitle]);
+  }, [currentSheetMusic, currentTitle]);
 
   const handleDownloadMidi = useCallback(() => {
     const safeName = (currentTitle || "transcription").replace(/[^a-z0-9_\-. ]/gi, "_");
@@ -705,9 +706,7 @@ export default function Dashboard() {
                         </div>
                       </div>
 
-                      {/* Sheet music viewer — ref used for PDF capture */}
                       <div
-                        ref={sheetContainerRef}
                         className="w-full bg-[#030712]/60 p-4 rounded-xl border border-slate-900/60 min-h-[520px] flex flex-col items-center justify-center overflow-hidden"
                       >
                         <SheetMusicViewer musicXmlData={currentSheetMusic} />

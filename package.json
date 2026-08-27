@@ -19,7 +19,8 @@
     "next": "^15.3.1",
     "opensheetmusicdisplay": "^1.9.9",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "svg2pdf.js": "^2.7.0"
   },
   "devDependencies": {
     "@types/node": "^22.15.3",

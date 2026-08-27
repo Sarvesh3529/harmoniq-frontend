@@ -327,11 +327,11 @@ export function AuraTranscribeDashboard({
   }
 
   async function handleDownloadPdf() {
-    if (!containerRef.current) {
+    if (!musicXml.trim()) {
       return;
     }
 
-    await downloadFullDocumentPdf(containerRef.current, "aura-transcribe-score");
+    await downloadFullDocumentPdf(musicXml, "aura-transcribe-score");
   }
 
   function handleDownloadMidi() {

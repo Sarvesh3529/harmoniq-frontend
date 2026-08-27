@@ -21,7 +21,7 @@ const STEP_SEMITONE: Record<string, number> = {
  * This ensures OSMD renders the top stave with a Treble clef and the
  * bottom stave with a Bass clef, regardless of what the backend emitted.
  */
-function enforcePianoGrandStaff(xmlString: string): string {
+export function enforcePianoGrandStaff(xmlString: string): string {
   // Strip xmlns namespace declarations before parsing.
   // music21 (used in the backend) injects xmlns="..." when it re-saves the
   // file.  If we leave it in, elements created with createElementNS(null,...)
