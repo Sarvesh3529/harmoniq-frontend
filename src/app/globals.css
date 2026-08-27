@@ -11,13 +11,13 @@
 }
 
 html {
-  background: #0a1118;
+  background: #070a12;
 }
 
 body {
   margin: 0;
   min-height: 100vh;
-  background: #0a1118;
+  background: #070a12;
   color: #f1f5f9;
   font-family:
     "Sora",
@@ -38,4 +38,35 @@ body {
 a {
   color: inherit;
   text-decoration: none;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid rgba(167, 139, 250, 0.85);
+  outline-offset: 3px;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.025);
+}
+
+::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.22);
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(167, 139, 250, 0.42);
+  background-clip: padding-box;
 }

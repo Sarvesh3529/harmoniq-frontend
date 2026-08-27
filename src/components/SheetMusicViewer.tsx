@@ -204,7 +204,7 @@ export default function SheetMusicViewer({ musicXmlData, zoom = 1.0 }: SheetMusi
 
   if (!isClient) {
     return (
-      <div className="w-full h-[450px] bg-white/[0.01] rounded-xl animate-pulse flex items-center justify-center text-xs text-slate-500">
+      <div className="w-full min-h-[540px] md:min-h-[620px] bg-white/[0.01] rounded-xl animate-pulse flex items-center justify-center text-xs text-slate-500">
         Preparing rendering engine framework...
       </div>
     );
@@ -220,7 +220,7 @@ export default function SheetMusicViewer({ musicXmlData, zoom = 1.0 }: SheetMusi
       
       <div 
         ref={containerRef} 
-        className="w-full min-h-[450px] max-h-[65vh] overflow-x-auto overflow-y-auto bg-white p-6 rounded-xl border border-slate-800 shadow-inner sheet-music-container"
+        className="w-full min-h-[540px] md:min-h-[620px] max-h-[78vh] overflow-x-auto overflow-y-auto bg-white p-4 md:p-8 rounded-xl border border-slate-200 shadow-inner sheet-music-container"
         style={{ color: "#000000" }}
       />
     </div>
