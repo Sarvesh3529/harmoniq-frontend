@@ -137,14 +137,14 @@ export default function AudioUploader({ onTranscribe }: AudioUploaderProps) {
           disabled={isUploading}
           className={[
             "w-full flex items-center gap-3 rounded-2xl border p-4 text-left transition-colors",
-            "bg-white border-slate-200 hover:border-slate-300",
-            "dark:bg-white/[0.02] dark:border-white/10 dark:hover:border-white/20",
-            isDragOver ? "ring-2 ring-indigo-500/40 border-indigo-400/40" : "",
+            "bg-[#fffef8] border-[#d8e0d2] hover:border-[#2d7b4e] shadow-[0_10px_30px_rgba(23,48,35,0.06)]",
+            "dark:bg-[#122219] dark:border-white/10 dark:hover:border-[#b7e33d]/50",
+            isDragOver ? "ring-2 ring-[#b7e33d]/50 border-[#2d7b4e]" : "",
             isUploading ? "opacity-70 cursor-not-allowed" : "",
           ].join(" ")}
           aria-label="Upload audio file"
         >
-          <div className="shrink-0 w-10 h-10 rounded-xl flex items-center justify-center bg-indigo-600/10 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-300">
+              <div className="shrink-0 w-10 h-10 rounded-xl flex items-center justify-center bg-[#e9f4c6] text-[#2d7b4e] dark:bg-[#b7e33d]/15 dark:text-[#dff69a]">
             <UploadCloud className="w-5 h-5" />
           </div>
 
@@ -188,7 +188,7 @@ export default function AudioUploader({ onTranscribe }: AudioUploaderProps) {
           type="button"
           onClick={handleUpload}
           disabled={!selectedFile || isUploading || isModalOpen}
-          className="w-full md:w-auto px-7 py-4 rounded-2xl bg-indigo-600 text-white font-semibold text-sm hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm shadow-indigo-600/20"
+          className="w-full md:w-auto px-7 py-4 rounded-2xl bg-[#b7e33d] text-[#173023] font-semibold text-sm hover:bg-[#c9f064] disabled:opacity-50 disabled:cursor-not-allowed shadow-sm shadow-[#b7e33d]/20 transition active:scale-[0.98]"
         >
           {isUploading ? "Transcribing..." : "Transcribe"}
         </button>
@@ -201,8 +201,8 @@ export default function AudioUploader({ onTranscribe }: AudioUploaderProps) {
       )}
 
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center backdrop-blur-sm p-4">
-          <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-[#0a1118] p-6 shadow-2xl">
+        <div className="fixed inset-0 bg-[#173023]/45 z-50 flex items-center justify-center backdrop-blur-sm p-4">
+          <div className="w-full max-w-md rounded-3xl border border-[#d8e0d2] bg-[#fffef8] dark:border-white/10 dark:bg-[#122219] p-6 shadow-2xl shadow-[#173023]/20">
             <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
               Name Your Transcription
             </h3>
@@ -220,7 +220,7 @@ export default function AudioUploader({ onTranscribe }: AudioUploaderProps) {
                 value={transcriptionName}
                 onChange={(e) => setTranscriptionName(e.target.value)}
                 placeholder={selectedFile?.name || "My transcription"}
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:placeholder:text-slate-500"
+                className="w-full rounded-xl border border-[#d8e0d2] bg-[#f3f5ed] px-4 py-3 text-sm text-[#173023] placeholder:text-[#69776d] focus:outline-none focus:ring-2 focus:ring-[#b7e33d]/60 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:placeholder:text-slate-500"
               />
             </div>
 
@@ -236,7 +236,7 @@ export default function AudioUploader({ onTranscribe }: AudioUploaderProps) {
                 type="button"
                 onClick={handleUpload}
                 disabled={isUploading}
-                className="px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-500 text-sm font-semibold disabled:opacity-50"
+                className="px-4 py-2 rounded-xl bg-[#173b29] text-[#e9f4c6] hover:bg-[#2d7b4e] text-sm font-semibold disabled:opacity-50"
               >
                 {isUploading ? "Starting..." : "Start Transcription"}
               </button>

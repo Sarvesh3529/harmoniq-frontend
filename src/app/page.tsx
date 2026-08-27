@@ -30,6 +30,9 @@ import {
   AudioWaveform,
   Sparkles,
   CircleCheck,
+  Sun,
+  Moon,
+  ArrowUpRight,
 } from "lucide-react";
 
 interface Transcription {
@@ -84,197 +87,26 @@ const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   return (
     <>
-      {/* Mobile backdrop (tap to close) */}
-      {isMenuOpen && (
-        <button
-          type="button"
-          aria-label="Close sidebar"
-          onClick={() => setIsMenuOpen(false)}
-          className="md:hidden fixed inset-0 bg-black/50 z-40"
-        />
-      )}
+      {isMenuOpen && <button type="button" aria-label="Close sidebar" onClick={() => setIsMenuOpen(false)} className="fixed inset-0 z-40 bg-[#173023]/35 backdrop-blur-[2px] md:hidden" />}
+      <aside className={["fixed left-0 top-0 z-50 flex h-full flex-col justify-between border-r border-[#b7e33d]/25 bg-[#173b29] py-5 text-emerald-50 shadow-2xl shadow-[#173023]/20 transition-all duration-300 ease-out dark:border-white/10 dark:bg-[#0c1a12]", "w-[18.5rem] px-5 -translate-x-full md:translate-x-0", isMenuOpen ? "translate-x-0" : "-translate-x-full", isMenuOpen ? "md:w-[18.5rem] md:px-5" : "md:w-[5.25rem] md:px-2"].join(" ")}>
+        <div className="flex h-[calc(100%-110px)] w-full flex-col gap-7">
+          <div className="flex h-20 w-full items-center justify-between border-b border-white/10 pb-3">
+            {isMenuOpen ? <div className="flex items-center gap-3"><div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#b7e33d] text-[#173023] shadow-lg shadow-[#b7e33d]/10"><Music className="h-5 w-5" /></div><div><div className="text-[15px] font-black tracking-[0.16em]">HARMONIQ</div><div className="mt-1 text-[9px] font-bold uppercase tracking-[0.25em] text-emerald-100/55">Notation desk</div></div></div> : <button onClick={() => setIsMenuOpen(true)} className="mx-auto flex h-11 w-11 items-center justify-center rounded-2xl bg-[#b7e33d] text-[#173023] transition-transform active:scale-95" title="Open sidebar"><Menu className="h-5 w-5" /></button>}
+            {isMenuOpen && <button onClick={() => setIsMenuOpen(false)} className="rounded-xl p-2 text-emerald-100/55 transition hover:bg-white/10 hover:text-white" title="Close sidebar"><X className="h-4 w-4" /></button>}
+          </div>
 
-      <aside
-        className={[
-          "fixed left-0 top-0 h-full bg-[#080b14] border-r border-white/[0.06] flex flex-col justify-between py-6 z-50 shadow-2xl shadow-black/20 transition-all duration-300 ease-in-out",
-          // Mobile: slide-in drawer
-          "w-72 px-4 -translate-x-full md:translate-x-0",
-          isMenuOpen ? "translate-x-0" : "-translate-x-full",
-          // Desktop: collapsible sidebar
-          isMenuOpen ? "md:w-64 md:px-4" : "md:w-20 md:px-2",
-        ].join(" ")}
-      >
-        <div className="flex flex-col gap-6 w-full h-[calc(100%-110px)]">
-        {/* Header Section */}
-        <div className="h-24 flex items-center justify-between w-full relative border-b border-white/[0.02] pb-2">
-          {isMenuOpen ? (
-            <>
-              {/* LOGO SIZING NUDGE ZONE (logo-with-name):
-                  - Size: tweak `w-[70%]`.
-                  - Left nudge: tweak `ml-[12%]` (smaller = more left).
-               */}
-              <div className="flex items-center w-full h-full overflow-hidden">
-                <img
-                  src="/logo-with-name.png"
-                  alt="Harmoniq"
-                  className="w-[70%] h-auto ml-[12%] mr-auto object-contain max-w-none"
-                />
-              </div>
+          <nav className="flex w-full flex-col gap-2">
+            <button disabled={status === 'processing'} onClick={() => setActiveTab("dashboard")} className={`flex w-full items-center gap-3 rounded-2xl px-3.5 py-3 transition active:scale-[0.98] ${activeTab === "dashboard" && !selectedTrackId ? "bg-[#b7e33d] font-semibold text-[#173023] shadow-lg shadow-[#b7e33d]/10" : "text-emerald-100/70 hover:bg-white/10 hover:text-white"}`}><LayoutDashboard className="h-4.5 w-4.5 flex-shrink-0" />{isMenuOpen && <span className="text-sm">Workspace</span>}</button>
+            {isMenuOpen ? <div className="mt-1 flex w-full items-center gap-2 rounded-2xl border border-white/10 bg-black/10 px-3 py-2.5"><Search className="h-4 w-4 flex-shrink-0 text-emerald-100/45" /><input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search tracks..." className="w-full bg-transparent text-sm text-white placeholder:text-emerald-100/35 focus:outline-none" /></div> : <button onClick={() => setIsMenuOpen(true)} className="flex w-full items-center justify-center rounded-2xl p-3 text-emerald-100/65 transition hover:bg-white/10 hover:text-white"><Search className="h-5 w-5" /></button>}
+          </nav>
 
-              <button
-                onClick={() => setIsMenuOpen(false)}
-                className="absolute right-0 top-1/2 -translate-y-1/2 p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-white/5 rounded-lg transition-all z-50"
-                title="Close sidebar"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </>
-          ) : (
-            <div className="relative group flex items-center justify-center w-full">
-              <button
-                onClick={() => setIsMenuOpen(true)}
-                className="focus:outline-none transition-transform active:scale-95 flex items-center justify-center w-full"
-                title="Open sidebar"
-              >
-                {/* GEMINI-STYLE MENU BUTTON (no logo):
-                    - Button size: tweak `w-14 h-14`.
-                    - Icon size: tweak `w-6 h-6`.
-                 */}
-                <span className="w-14 h-14 rounded-2xl flex items-center justify-center hover:bg-slate-100 dark:hover:bg-white/5 transition-colors">
-                  <Menu className="w-6 h-6 text-slate-600 dark:text-slate-300" />
-                </span>
-              </button>
-            </div>
-          )}
+          {isMenuOpen && <div className="mt-1 flex-1 space-y-2 overflow-y-auto px-1"><p className="mb-3 px-1 text-[10px] font-bold uppercase tracking-[0.22em] text-emerald-100/40">Recent scores</p>{transcriptions.length === 0 ? <p className="px-1 text-xs italic text-emerald-100/40">No scores yet</p> : <div className="flex flex-col gap-1">{transcriptions.map((track) => <button key={track.id} onClick={() => onSelectTrack(track)} className={`group flex w-full items-center gap-3 rounded-2xl border p-3 text-left transition ${selectedTrackId === track.id ? "border-[#b7e33d]/40 bg-[#b7e33d]/15 text-[#e9f4c6]" : "border-transparent text-emerald-100/65 hover:bg-white/10 hover:text-white"}`}><FileAudio className={`h-4 w-4 flex-shrink-0 ${selectedTrackId === track.id ? "text-[#b7e33d]" : "text-emerald-100/40 group-hover:text-emerald-100/75"}`} /><div className="min-w-0 flex-1"><p className="truncate text-xs font-medium">{track.title}</p><p className="mt-1 truncate text-[10px] text-emerald-100/40">{track.createdAt ? new Date(track.createdAt).toLocaleDateString() : "Recent"}</p></div></button>)}</div>}</div>}
         </div>
 
-        {/* Navigation Section */}
-        <nav className="flex flex-col gap-2 w-full">
-          <button
-            disabled={status === 'processing'}
-            onClick={() => setActiveTab("dashboard")}
-            className={`p-3 rounded-xl flex items-center gap-4 transition-all w-full ${activeTab === "dashboard" && !selectedTrackId
-              ? "bg-purple-500/10 text-purple-500 dark:text-purple-400 border border-purple-500/20"
-              : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-white/5"
-              } disabled:opacity-30 disabled:cursor-not-allowed`}
-          >
-            <LayoutDashboard className="w-5 h-5 flex-shrink-0 mx-auto" />
-            {isMenuOpen && <span className="text-sm font-medium">Workspace</span>}
-          </button>
-
-          {isMenuOpen ? (
-            <div className="w-full px-1 animate-fade-in">
-              <div className="relative flex items-center bg-white/[0.02] border border-white/5 rounded-xl w-full px-3 py-2">
-                <Search className="w-4 h-4 text-slate-500 mr-2 flex-shrink-0" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search tracks..."
-                  className="bg-transparent text-sm text-slate-200 w-full focus:outline-none"
-                />
-              </div>
-            </div>
-          ) : (
-            <button
-              onClick={() => setIsMenuOpen(true)}
-              className="p-3 rounded-xl flex items-center transition-all w-full text-slate-400 hover:text-slate-200 hover:bg-white/5"
-            >
-              <Search className="w-5 h-5 flex-shrink-0 mx-auto" />
-            </button>
-          )}
-        </nav>
-
-        {/* History Item Section */}
-        {isMenuOpen && (
-          <div className="flex-1 overflow-y-auto px-1 mt-2 space-y-2 max-h-[50vh] animate-fade-in scrollbar-thin">
-            <p className="text-[10px] uppercase font-bold tracking-wider text-slate-600 px-1 mb-1">History</p>
-            {transcriptions.length === 0 ? (
-              <p className="text-xs text-slate-500 px-1 italic">No records found</p>
-            ) : (
-              <div className="flex flex-col gap-1">
-                {transcriptions.map((track) => (
-                  <button
-                    key={track.id}
-                    onClick={() => onSelectTrack(track)}
-                    className={`w-full text-left p-2.5 rounded-xl transition-all flex items-center gap-3 group border ${selectedTrackId === track.id
-                      ? "bg-purple-500/10 border-purple-500/30 text-purple-400"
-                      : "bg-transparent border-transparent text-slate-400 hover:text-slate-200 hover:bg-white/[0.02]"
-                      }`}
-                  >
-                    <FileAudio className={`w-4 h-4 flex-shrink-0 ${selectedTrackId === track.id ? "text-purple-400" : "text-slate-500 group-hover:text-slate-400"}`} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium truncate">{track.title}</p>
-                      <p className="text-[10px] text-slate-500 truncate">
-                        {track.createdAt ? new Date(track.createdAt).toLocaleDateString() : "Recent"}
-                      </p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Footer Section */}
-      <div className="flex flex-col gap-3 w-full">
-        <button
-          disabled={status === 'processing'}
-          onClick={() => setActiveTab("settings")}
-          className={`p-3 rounded-xl flex items-center gap-4 transition-all w-full ${activeTab === "settings"
-            ? "bg-purple-500/10 text-purple-500 dark:text-purple-400 border border-purple-500/20"
-            : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-white/5"
-            } disabled:opacity-30 disabled:cursor-not-allowed`}
-        >
-          <Settings className="w-5 h-5 flex-shrink-0 mx-auto" />
-          {isMenuOpen && <span className="text-sm font-medium">Settings</span>}
-        </button>
-
-        <div
-          onClick={() => {
-            if (user?.isAnonymous) {
-              loginWithGoogle();
-            } else {
-              if (confirm("Sign out of your session?")) logout();
-            }
-          }}
-          className="flex items-center gap-4 p-2 w-full cursor-pointer hover:bg-red-500/5 rounded-xl transition-all group"
-          title={user?.isAnonymous ? "Click to sign in" : "Click to sign out"}
-        >
-          <div
-            className={`h-9 w-9 rounded-full border border-purple-500/30 bg-purple-600/10 flex-shrink-0 overflow-hidden ${isMenuOpen ? "" : "mx-auto"
-              }`}
-          >
-            {user?.photoURL ? (
-              <img
-                src={user.photoURL}
-                alt={user?.displayName ? `${user.displayName} avatar` : "Avatar"}
-                className="h-9 w-9 rounded-full object-cover"
-                loading="lazy"
-                referrerPolicy="no-referrer"
-                onError={(e) => {
-                  e.currentTarget.style.display = "none";
-                }}
-              />
-            ) : (
-              <div className="h-9 w-9 rounded-full flex items-center justify-center font-bold text-sm text-purple-500 dark:text-purple-400">
-                {user?.isAnonymous ? "G" : (user?.displayName ? user.displayName.charAt(0).toUpperCase() : "U")}
-              </div>
-            )}
-          </div>
-          {isMenuOpen && (
-            <div className="flex flex-col min-w-0 flex-1">
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300 truncate group-hover:text-red-500 dark:group-hover:text-red-400">
-                {user?.isAnonymous ? "Guest User" : (user?.displayName || "User")}
-              </span>
-              <span className="text-[10px] text-slate-500 truncate group-hover:text-red-600/70 dark:group-hover:text-red-500/70">
-                {user?.isAnonymous ? "Sign in to save runs" : "Sign out"}
-              </span>
-            </div>
-          )}
+        <div className="flex w-full flex-col gap-3">
+          <button disabled={status === 'processing'} onClick={() => setActiveTab("settings")} className={`flex w-full items-center gap-3 rounded-2xl px-3.5 py-3 transition active:scale-[0.98] ${activeTab === "settings" ? "bg-[#b7e33d] font-semibold text-[#173023]" : "text-emerald-100/70 hover:bg-white/10 hover:text-white"}`}><Settings className="h-4.5 w-4.5 flex-shrink-0" />{isMenuOpen && <span className="text-sm">Settings</span>}</button>
+          <div onClick={() => { if (user?.isAnonymous) loginWithGoogle(); else if (confirm("Sign out of your session?")) logout(); }} className="group flex w-full cursor-pointer items-center gap-3 rounded-2xl border border-white/10 bg-black/10 p-2.5 transition hover:border-[#b7e33d]/30 hover:bg-white/10" title={user?.isAnonymous ? "Click to sign in" : "Click to sign out"}><div className="flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#b7e33d]/45 bg-[#b7e33d]/15 text-sm font-bold text-[#dff69a]">{user?.photoURL ? <img src={user.photoURL} alt={user?.displayName ? `${user.displayName} avatar` : "Avatar"} className="h-9 w-9 rounded-full object-cover" loading="lazy" referrerPolicy="no-referrer" onError={(e) => { e.currentTarget.style.display = "none"; }} /> : (user?.isAnonymous ? "G" : (user?.displayName ? user.displayName.charAt(0).toUpperCase() : "U"))}</div>{isMenuOpen && <div className="min-w-0 flex-1"><span className="block truncate text-sm font-medium text-white">{user?.isAnonymous ? "Guest User" : (user?.displayName || "User")}</span><span className="mt-0.5 block truncate text-[10px] text-emerald-100/45">{user?.isAnonymous ? "Sign in to save runs" : "Sign out"}</span></div>}</div>
         </div>
-      </div>
       </aside>
     </>
   );
@@ -291,25 +123,25 @@ const ProcessingView: React.FC<{ step: number }> = ({ step }) => {
   ];
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[400px] text-center space-y-6 max-w-md mx-auto relative z-20">
+    <div className="relative z-20 mx-auto flex min-h-[400px] max-w-md flex-col items-center justify-center space-y-6 text-center">
       <div className="relative flex items-center justify-center">
-        <div className="w-16 h-16 rounded-full border-2 border-purple-500/20 border-t-purple-400 animate-spin" />
-        <Music className="w-6 h-6 text-purple-400 absolute animate-pulse" />
+        <div className="h-16 w-16 animate-spin rounded-full border-2 border-[#2d7b4e]/20 border-t-[#2d7b4e]" />
+        <Music className="absolute h-6 w-6 animate-pulse text-[#2d7b4e]" />
       </div>
       <div className="space-y-2">
-        <h3 className="text-lg font-medium text-slate-200">Processing Audio</h3>
-        <p className="text-sm text-slate-400 min-h-[20px] transition-all">{steps[step] || "Working..."}</p>
+        <h3 className="text-lg font-semibold text-[var(--ink)]">Processing audio</h3>
+        <p className="min-h-[20px] text-sm text-[var(--muted)] transition-all">{steps[step] || "Working..."}</p>
       </div>
     </div>
   );
 };
 
 const ScoreViewer: React.FC<{ sheetMusicData?: string | null }> = ({ sheetMusicData }) => (
-  <div className="w-full bg-[#030712]/60 p-4 rounded-xl border border-slate-900/60 min-h-[520px] flex flex-col items-center justify-center overflow-hidden">
+  <div className="flex min-h-[520px] w-full flex-col items-center justify-center overflow-hidden rounded-xl border border-[var(--line)] bg-[var(--paper)] p-4">
     {sheetMusicData ? (
       <SheetMusicViewer musicXmlData={sheetMusicData} />
     ) : (
-      <p className="text-sm text-slate-500 font-mono">No sheet music structural output loaded.</p>
+      <p className="font-mono text-sm text-[var(--muted)]">No sheet music structural output loaded.</p>
     )}
   </div>
 );
@@ -322,7 +154,7 @@ export default function Dashboard() {
   const { user, loading: authLoading, loginWithGoogle, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
-  const [isMenuOpen, setIsMenuOpen] = useState(true);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [status, setStatus] = useState<'idle' | 'processing' | 'completed' | 'failed'>('idle');
   const [processingStep, setProcessingStep] = useState(0);
@@ -608,18 +440,16 @@ export default function Dashboard() {
 
   if (authLoading || !user) {
     return (
-      <div className="min-h-screen w-screen bg-slate-50 dark:bg-[#02040a] flex flex-col items-center justify-center space-y-4">
-        <div className="w-10 h-10 rounded-full border-2 border-purple-500/20 border-t-purple-500 animate-spin" />
-        <p className="text-xs text-slate-500 tracking-wider uppercase font-medium">Validating Session...</p>
+      <div className="flex min-h-screen w-screen flex-col items-center justify-center space-y-4 bg-[var(--page)] text-[var(--ink)]">
+        <div className="h-10 w-10 animate-spin rounded-full border-2 border-[#2d7b4e]/20 border-t-[#2d7b4e]" />
+        <p className="text-xs font-medium uppercase tracking-wider text-[var(--muted)]">Validating session...</p>
       </div>
     );
   }
 
   return (
-    <main className="min-h-screen w-screen overflow-x-hidden bg-[#070a12] text-slate-100 selection:bg-violet-500/30 antialiased flex relative">
-      <div className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(circle_at_55%_15%,rgba(111,76,255,0.13),transparent_32%),radial-gradient(circle_at_80%_75%,rgba(31,214,184,0.06),transparent_28%)]" />
-      <div className="pointer-events-none absolute inset-0 z-0 opacity-20 [background-image:linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.035)_1px,transparent_1px)] [background-size:48px_48px] [mask-image:linear-gradient(to_bottom,black,transparent_75%)]" />
-
+    <main className="relative flex min-h-screen w-screen overflow-x-hidden bg-[var(--page)] text-[var(--ink)] antialiased selection:bg-[#b7e33d]">
+      <div className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(circle_at_70%_10%,rgba(183,227,61,0.16),transparent_27%),radial-gradient(circle_at_28%_80%,rgba(45,123,78,0.08),transparent_30%)] dark:bg-[radial-gradient(circle_at_70%_10%,rgba(183,227,61,0.08),transparent_27%),radial-gradient(circle_at_28%_80%,rgba(45,123,78,0.14),transparent_30%)]" />
       <Sidebar
         isMenuOpen={isMenuOpen}
         setIsMenuOpen={setIsMenuOpen}
@@ -636,98 +466,32 @@ export default function Dashboard() {
         loginWithGoogle={loginWithGoogle}
       />
 
-      <div className={`relative z-10 flex min-h-screen flex-1 flex-col transition-[padding] duration-300 ${isMenuOpen ? "md:pl-64" : "md:pl-20"}`}>
-        <header className="sticky top-0 z-40 border-b border-white/[0.06] bg-[#070a12]/80 px-5 py-4 backdrop-blur-xl md:px-8">
+      <div className={`relative z-10 flex min-h-screen flex-1 flex-col transition-[padding] duration-300 ${isMenuOpen ? "md:pl-[18.5rem]" : "md:pl-[5.25rem]"}`}>
+        <header className="sticky top-0 z-40 border-b border-[var(--line)] bg-[var(--page)]/90 px-5 py-4 backdrop-blur-xl md:px-8">
           <div className="mx-auto flex max-w-[1480px] items-center justify-between gap-4">
             <div className="flex min-w-0 items-center gap-3">
-              <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="rounded-xl border border-white/10 bg-white/[0.04] p-2.5 text-slate-400 transition hover:border-white/20 hover:text-white md:hidden" aria-label="Toggle sidebar">
-                <Menu className="h-5 w-5" />
-              </button>
-              <div className="hidden h-8 w-px bg-white/10 md:block" />
-              <div className="min-w-0">
-                <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.24em] text-slate-500">
-                  <AudioWaveform className="h-3.5 w-3.5 text-teal-300" />
-                  Harmoniq studio
-                </div>
-                <div className="mt-0.5 truncate text-sm font-medium text-slate-200">
-                  {currentTitle || (activeTab === "settings" ? "Workspace settings" : "New transcription")}
-                </div>
-              </div>
+              <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="rounded-xl border border-[var(--line)] bg-[var(--paper)] p-2.5 text-[var(--ink)] transition hover:border-[var(--line-strong)] md:hidden" aria-label="Toggle sidebar"><Menu className="h-5 w-5" /></button>
+              <div className="hidden h-8 w-px bg-[var(--line)] md:block" />
+              <div className="min-w-0"><div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.24em] text-[var(--muted)]"><AudioWaveform className="h-3.5 w-3.5 text-[var(--accent-strong)]" /> Notation desk</div><div className="mt-0.5 truncate text-sm font-semibold text-[var(--ink)]">{currentTitle || (activeTab === "settings" ? "Workspace settings" : "New score")}</div></div>
             </div>
-            <div className="flex items-center gap-3">
-              {status === "completed" && <span className="hidden items-center gap-1.5 rounded-full border border-emerald-300/15 bg-emerald-300/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-emerald-200 sm:flex"><CircleCheck className="h-3.5 w-3.5" /> Ready</span>}
-              {user?.isAnonymous ? (
-                <button onClick={loginWithGoogle} className="inline-flex items-center gap-2 rounded-xl bg-violet-500 px-3.5 py-2 text-sm font-semibold text-white shadow-lg shadow-violet-950/30 transition hover:bg-violet-400 active:scale-[0.98]" title="Sign In with Google to save history across devices">
-                  <LogIn className="h-4 w-4" /> Sign in
-                </button>
-              ) : <div className="h-8 w-8 rounded-full border border-white/10 bg-white/[0.06]" aria-hidden="true" />}
-            </div>
+            <div className="flex items-center gap-2.5"><button type="button" onClick={toggleTheme} className="rounded-xl border border-[var(--line)] bg-[var(--paper)] p-2.5 text-[var(--ink)] transition hover:border-[var(--accent-strong)]" aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}>{theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}</button>{status === "completed" && <span className="hidden items-center gap-1.5 rounded-full border border-[#2d7b4e]/20 bg-[#e9f4c6] px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[#2d7b4e] dark:border-[#b7e33d]/20 dark:bg-[#b7e33d]/10 dark:text-[#dff69a] sm:flex"><CircleCheck className="h-3.5 w-3.5" /> Ready</span>}{user?.isAnonymous ? <button onClick={loginWithGoogle} className="inline-flex items-center gap-2 rounded-xl bg-[#173b29] px-3.5 py-2.5 text-sm font-semibold text-[#e9f4c6] shadow-lg shadow-[#173023]/15 transition hover:bg-[#2d7b4e] active:scale-[0.98] dark:bg-[#b7e33d] dark:text-[#173023] dark:hover:bg-[#c9f06a]" title="Sign In with Google to save history across devices"><LogIn className="h-4 w-4" /> Sign in</button> : <div className="h-8 w-8 rounded-full border border-[var(--line)] bg-[var(--paper)]" aria-hidden="true" />}</div>
           </div>
         </header>
 
-        <section className="flex-1 px-5 py-8 md:px-8 md:py-10">
-          <div className="mx-auto flex min-h-[calc(100vh-150px)] max-w-[1480px] flex-col">
-            {status === 'processing' ? (
-              <div className="flex flex-1 items-center justify-center"><ProcessingView step={processingStep} /></div>
-            ) : (
-              <>
-                {activeTab === 'dashboard' && (
-                  status === 'completed' && currentSheetMusic ? (
-                    <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-                      <div className="mb-7 flex flex-col gap-5 border-b border-white/[0.08] pb-6 lg:flex-row lg:items-end lg:justify-between">
-                        <div className="min-w-0">
-                          <div className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.22em] text-violet-300"><Sparkles className="h-3.5 w-3.5" /> Transcription complete</div>
-                          <h1 className="truncate text-3xl font-semibold tracking-[-0.04em] text-white md:text-4xl">{currentTitle || "Notation output"}</h1>
-                          <p className="mt-2 flex items-center gap-2 text-sm text-slate-400"><CircleCheck className="h-4 w-4 text-emerald-300" /> Your score is ready to review and export.</p>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <button onClick={handleDownloadPdf} className="inline-flex items-center gap-2 rounded-xl bg-violet-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-violet-950/30 transition hover:bg-violet-400 active:scale-[0.98]" title="Download sheet music as PDF"><Download className="h-4 w-4" /> PDF</button>
-                          <button onClick={handleDownloadMidi} disabled={!currentMidiBase64 && !currentMidiUrl} className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-semibold text-slate-200 transition hover:border-teal-300/30 hover:bg-teal-300/10 hover:text-teal-100 disabled:cursor-not-allowed disabled:opacity-40" title={currentMidiBase64 || currentMidiUrl ? "Download MIDI file" : "MIDI not available"}><FileMusic className="h-4 w-4" /> MIDI</button>
-                          <button onClick={handleResetWorkspace} className="rounded-xl border border-white/10 bg-white/[0.04] p-2.5 text-slate-400 transition hover:border-white/20 hover:bg-white/[0.08] hover:text-white" title="Close result" aria-label="Close result"><X className="h-5 w-5" /></button>
-                        </div>
-                      </div>
-
-                      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_260px]">
-                        <div className="min-w-0 rounded-[26px] border border-white/[0.08] bg-white/[0.035] p-3 shadow-2xl shadow-black/20 md:p-5">
-                          <div className="mb-3 flex items-center justify-between px-1 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500"><span>Score preview</span><span className="text-teal-300/80">MusicXML render</span></div>
-                          <div className="min-h-[560px] overflow-hidden rounded-2xl bg-[#eef0f4] p-2 shadow-inner md:p-4"><SheetMusicViewer musicXmlData={currentSheetMusic} /></div>
-                        </div>
-                        <aside className="h-fit rounded-[26px] border border-white/[0.08] bg-white/[0.035] p-5">
-                          <div className="flex items-start justify-between gap-3"><div><p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Project</p><h2 className="mt-2 break-words text-lg font-semibold text-white">{currentTitle || "Untitled score"}</h2></div><div className="rounded-xl bg-teal-300/10 p-2 text-teal-200"><FileMusic className="h-4 w-4" /></div></div>
-                          <div className="my-5 h-px bg-white/[0.08]" />
-                          <div className="space-y-3 text-sm"><div className="flex items-center justify-between"><span className="text-slate-500">Status</span><span className="text-emerald-200">Ready</span></div><div className="flex items-center justify-between"><span className="text-slate-500">Notation</span><span className="text-slate-200">Grand staff</span></div><div className="flex items-center justify-between"><span className="text-slate-500">Exports</span><span className="text-slate-200">PDF · MIDI</span></div></div>
-                          <div className="mt-6 rounded-2xl border border-violet-300/10 bg-violet-300/[0.06] p-4"><p className="text-xs font-semibold text-violet-100">Keep refining</p><p className="mt-1.5 text-xs leading-5 text-slate-400">Review the notation, then export the version you want to keep.</p></div>
-                        </aside>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex flex-1 items-center justify-center py-8">
-                      <div className="grid w-full max-w-6xl items-center gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:gap-20">
-                        <div className="max-w-xl">
-                          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-teal-300/15 bg-teal-300/[0.06] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-teal-200"><span className="h-1.5 w-1.5 rounded-full bg-teal-300 shadow-[0_0_12px_rgba(94,234,212,0.9)]" /> Audio to notation</div>
-                          <h1 className="max-w-2xl text-5xl font-semibold leading-[0.98] tracking-[-0.06em] text-white md:text-7xl">Turn a performance into <span className="bg-gradient-to-r from-violet-200 via-fuchsia-200 to-teal-200 bg-clip-text text-transparent">something you can play.</span></h1>
-                          <p className="mt-6 max-w-lg text-base leading-7 text-slate-400 md:text-lg">Upload a recording and let Harmoniq shape it into clear, playable sheet music—ready to review, refine, and export.</p>
-                          <div className="mt-8 flex flex-wrap gap-2 text-xs text-slate-500"><span className="rounded-full border border-white/10 bg-white/[0.035] px-3 py-2">MP3</span><span className="rounded-full border border-white/10 bg-white/[0.035] px-3 py-2">WAV</span><span className="rounded-full border border-white/10 bg-white/[0.035] px-3 py-2">M4A</span><span className="rounded-full border border-white/10 bg-white/[0.035] px-3 py-2">OGG</span><span className="rounded-full border border-white/10 bg-white/[0.035] px-3 py-2">FLAC</span></div>
-                        </div>
-                        <div className="relative">
-                          <div className="absolute -inset-8 rounded-[40px] bg-violet-500/10 blur-3xl" />
-                          <div className="relative rounded-[30px] border border-white/[0.1] bg-white/[0.055] p-3 shadow-2xl shadow-black/30 backdrop-blur-sm"><div className="rounded-[22px] border border-white/[0.08] bg-[#0c111d] p-6 md:p-8"><div className="mb-7 flex items-center justify-between"><div><p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">New project</p><h2 className="mt-2 text-xl font-semibold text-white">Start with your audio</h2></div><div className="rounded-2xl bg-violet-400/10 p-3 text-violet-200"><AudioWaveform className="h-6 w-6" /></div></div><AudioUploader onTranscribe={async (file, title) => { setSelectedFile(file); await handleUpload(file, title); }} /><div className="mt-6 flex items-center gap-3 border-t border-white/[0.07] pt-5 text-xs text-slate-500"><Sparkles className="h-4 w-4 text-violet-300" /> Your transcription name is saved with the project.</div></div></div>
-                        </div>
-                      </div>
-                    </div>
-                  )
-                )}
-
-                {activeTab === 'settings' && (
-                  <div className="mx-auto w-full max-w-2xl rounded-[26px] border border-white/[0.08] bg-white/[0.035] p-6 shadow-2xl shadow-black/10 md:p-8">
-                    <div className="mb-8 flex items-start justify-between gap-4"><div><div className="mb-3 inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-violet-300"><Settings className="h-3.5 w-3.5" /> Preferences</div><h2 className="text-2xl font-semibold tracking-tight text-white">Workspace settings</h2><p className="mt-2 text-sm text-slate-400">Personalize your Harmoniq studio.</p></div></div>
-                    <div className="space-y-4"><div className="flex items-center justify-between gap-4 rounded-2xl border border-white/[0.08] bg-black/10 p-4"><div><div className="text-sm font-semibold text-white">Theme</div><div className="mt-1 text-xs text-slate-500">Switch between light and dark.</div></div><button type="button" onClick={toggleTheme} className="rounded-xl border border-white/10 bg-white/[0.05] px-4 py-2 text-sm font-medium text-slate-200 transition hover:bg-white/10" aria-label="Toggle theme">{theme === "dark" ? "Dark" : "Light"}</button></div><div className="flex items-center justify-between gap-4 rounded-2xl border border-white/[0.08] bg-black/10 p-4"><div><div className="text-sm font-semibold text-white">Account</div><div className="mt-1 text-xs text-slate-500">End your current session.</div></div><button type="button" onClick={() => { if (confirm("Log out of your session?")) void logout(); }} className="rounded-xl bg-rose-500/90 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-400">Log out</button></div></div>
-                  </div>
-                )}
-              </>
+        <section className="relative flex-1 px-5 py-8 md:px-8 md:py-10"><div className="studio-grid pointer-events-none absolute inset-0 opacity-70" /><div className="relative mx-auto flex min-h-[calc(100vh-150px)] max-w-[1480px] flex-col">
+          {status === 'processing' ? <div className="flex flex-1 items-center justify-center"><ProcessingView step={processingStep} /></div> : <>
+            {activeTab === 'dashboard' && (
+              status === 'completed' && currentSheetMusic ? (
+                <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  <div className="mb-7 flex flex-col gap-5 border-b border-[var(--line)] pb-6 lg:flex-row lg:items-end lg:justify-between"><div className="min-w-0"><div className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.22em] text-[#2d7b4e] dark:text-[#b7e33d]"><Sparkles className="h-3.5 w-3.5" /> Transcription complete</div><h1 className="truncate display-type text-3xl font-black tracking-[-0.055em] text-[var(--ink)] md:text-5xl">{currentTitle || "Notation output"}</h1><p className="mt-2 flex items-center gap-2 text-sm text-[var(--muted)]"><CircleCheck className="h-4 w-4 text-[#2d7b4e]" /> Ready to review, download, and play.</p></div><div className="flex flex-wrap items-center gap-2"><button onClick={handleDownloadPdf} className="inline-flex items-center gap-2 rounded-xl bg-[#173b29] px-4 py-2.5 text-sm font-semibold text-[#e9f4c6] shadow-lg shadow-[#173023]/15 transition hover:bg-[#2d7b4e] active:scale-[0.98] dark:bg-[#b7e33d] dark:text-[#173023]" title="Download sheet music as PDF"><Download className="h-4 w-4" /> PDF</button><button onClick={handleDownloadMidi} disabled={!currentMidiBase64 && !currentMidiUrl} className="inline-flex items-center gap-2 rounded-xl border border-[var(--line-strong)] bg-[var(--paper)] px-4 py-2.5 text-sm font-semibold text-[var(--ink)] transition hover:border-[#2d7b4e] hover:bg-[#e9f4c6] disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-[#b7e33d]/10" title={currentMidiBase64 || currentMidiUrl ? "Download MIDI file" : "MIDI not available"}><FileMusic className="h-4 w-4" /> MIDI</button><button onClick={handleResetWorkspace} className="rounded-xl border border-[var(--line)] bg-[var(--paper)] p-2.5 text-[var(--muted)] transition hover:border-[var(--line-strong)] hover:text-[var(--ink)]" title="Close result" aria-label="Close result"><X className="h-5 w-5" /></button></div></div>
+                  <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_270px]"><div className="paper-grain min-w-0 rounded-[26px] border border-[var(--line)] bg-[var(--paper)] p-3 shadow-[0_24px_70px_rgba(23,48,35,0.10)] md:p-5"><div className="mb-3 flex items-center justify-between px-1 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--muted)]"><span>Score preview</span><span className="text-[#2d7b4e] dark:text-[#b7e33d]">MusicXML render</span></div><div className="min-h-[560px] overflow-hidden rounded-2xl border border-[var(--line)] bg-[#f4f4ed] p-2 shadow-inner md:p-4"><SheetMusicViewer musicXmlData={currentSheetMusic} /></div></div><aside className="h-fit rounded-[26px] bg-[#173b29] p-5 text-emerald-50 shadow-xl shadow-[#173023]/15 dark:bg-[#102419]"><div className="flex items-start justify-between gap-3"><div><p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-100/55">Project notes</p><h2 className="mt-2 break-words text-lg font-semibold text-white">{currentTitle || "Untitled score"}</h2></div><div className="rounded-xl bg-[#b7e33d] p-2 text-[#173023]"><FileMusic className="h-4 w-4" /></div></div><div className="my-5 h-px bg-white/10" /><div className="space-y-3 text-sm"><div className="flex items-center justify-between"><span className="text-emerald-100/50">Status</span><span className="text-[#dff69a]">Ready</span></div><div className="flex items-center justify-between"><span className="text-emerald-100/50">Layout</span><span className="text-emerald-50">Grand staff</span></div><div className="flex items-center justify-between"><span className="text-emerald-100/50">Exports</span><span className="text-emerald-50">PDF · MIDI</span></div></div><div className="mt-6 rounded-2xl border border-[#b7e33d]/25 bg-[#b7e33d]/10 p-4"><p className="text-xs font-semibold text-[#e9f4c6]">A score worth sitting with.</p><p className="mt-1.5 text-xs leading-5 text-emerald-100/60">The notation is rendered from your transcription data, ready for a closer read.</p></div></aside></div>
+                </div>
+              ) : status === 'failed' ? <div className="mx-auto flex w-full max-w-xl flex-1 items-center justify-center py-10"><div className="w-full rounded-[28px] border border-rose-300/35 bg-rose-50 p-7 text-center shadow-xl shadow-rose-900/5 dark:border-rose-300/20 dark:bg-rose-950/20"><div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-100 text-rose-700 dark:bg-rose-400/10 dark:text-rose-300"><X className="h-5 w-5" /></div><h1 className="mt-5 text-xl font-bold text-[#173023] dark:text-white">That transcription did not finish</h1><p className="mt-2 text-sm leading-6 text-rose-800/75 dark:text-rose-200/70">{error || "Something went wrong while preparing the score."}</p><button onClick={handleResetWorkspace} className="mt-6 rounded-xl bg-[#173b29] px-4 py-2.5 text-sm font-semibold text-[#e9f4c6] transition hover:bg-[#2d7b4e]">Start again</button></div></div> : <div className="flex flex-1 items-center justify-center py-8"><div className="grid w-full max-w-6xl items-center gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:gap-20"><div className="max-w-2xl"><div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#2d7b4e]/20 bg-[#e9f4c6] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-[#2d7b4e] dark:border-[#b7e33d]/20 dark:bg-[#b7e33d]/10 dark:text-[#dff69a]"><span className="h-1.5 w-1.5 rounded-full bg-[#b7e33d] shadow-[0_0_12px_rgba(183,227,61,0.9)]" /> Audio to notation</div><h1 className="max-w-3xl display-type text-5xl font-black leading-[0.93] tracking-[-0.065em] text-[#173023] dark:text-[#edf6e8] md:text-7xl">Make a recording <span className="text-[#2d7b4e] dark:text-[#b7e33d]">playable.</span></h1><p className="mt-6 max-w-xl text-base leading-7 text-[#69776d] dark:text-[#93a99a] md:text-lg">Harmoniq turns a performance into clear sheet music you can read, review, and take to the piano.</p><div className="mt-9 max-w-md"><svg viewBox="0 0 460 70" fill="none" className="h-auto w-full overflow-visible" aria-hidden="true"><path d="M2 37C35 37 35 17 68 17s33 36 66 36 33-46 66-46 33 35 66 35 33-20 66-20 33 24 66 24 33-15 58-15" stroke="#2d7b4e" strokeWidth="2" strokeLinecap="round" className="signal-dash"/><path d="M2 37C35 37 35 17 68 17s33 36 66 36 33-46 66-46 33 35 66 35 33-20 66-20 33 24 66 24 33-15 58-15" stroke="#b7e33d" strokeWidth="5" strokeLinecap="round" strokeDasharray="1 17"/></svg><div className="mt-1 flex justify-between text-[10px] font-bold uppercase tracking-[0.2em] text-[#69776d] dark:text-[#93a99a]"><span>01 · capture</span><span>02 · transcribe</span><span>03 · play</span></div></div><div className="mt-8 flex flex-wrap gap-2 text-xs font-medium text-[#69776d] dark:text-[#93a99a]"><span className="rounded-full border border-[var(--line)] bg-[var(--paper)] px-3 py-2">MP3</span><span className="rounded-full border border-[var(--line)] bg-[var(--paper)] px-3 py-2">WAV</span><span className="rounded-full border border-[var(--line)] bg-[var(--paper)] px-3 py-2">M4A</span><span className="rounded-full border border-[var(--line)] bg-[var(--paper)] px-3 py-2">OGG</span><span className="rounded-full border border-[var(--line)] bg-[var(--paper)] px-3 py-2">FLAC</span></div></div><div className="relative"><div className="absolute -inset-8 rounded-[40px] bg-[#b7e33d]/25 blur-3xl dark:bg-[#b7e33d]/10" /><div className="relative rounded-[32px] bg-[#173b29] p-2.5 shadow-2xl shadow-[#173023]/20 dark:bg-[#102419]"><div className="rounded-[25px] border border-white/10 bg-[#214c35] p-6 md:p-8"><div className="mb-8 flex items-start justify-between gap-4"><div><p className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.2em] text-[#dff69a]/65">New project <ArrowUpRight className="h-3 w-3" /></p><h2 className="mt-2 text-2xl font-bold tracking-[-0.035em] text-white">Start with your audio</h2><p className="mt-2 max-w-xs text-sm leading-6 text-emerald-100/60">Give your recording a name, then let the notation desk do the heavy lifting.</p></div><div className="rounded-2xl bg-[#b7e33d] p-3 text-[#173023]"><AudioWaveform className="h-6 w-6" /></div></div><AudioUploader onTranscribe={async (file, title) => { setSelectedFile(file); await handleUpload(file, title); }} /><div className="mt-6 flex items-center gap-3 border-t border-white/10 pt-5 text-xs text-emerald-100/55"><Sparkles className="h-4 w-4 text-[#b7e33d]" /> Names are saved with the project history.</div></div></div></div></div></div>
             )}
-          </div>
-        </section>
+
+            {activeTab === 'settings' && <div className="mx-auto w-full max-w-2xl rounded-[28px] border border-[var(--line)] bg-[var(--paper)] p-6 shadow-[0_24px_70px_rgba(23,48,35,0.08)] md:p-8"><div className="mb-8 flex items-start justify-between gap-4"><div><div className="mb-3 inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[#2d7b4e] dark:text-[#b7e33d]"><Settings className="h-3.5 w-3.5" /> Preferences</div><h2 className="text-2xl font-black tracking-[-0.04em] text-[var(--ink)]">Workspace settings</h2><p className="mt-2 text-sm text-[var(--muted)]">Tune the desk to feel like yours.</p></div></div><div className="space-y-4"><div className="flex items-center justify-between gap-4 rounded-2xl border border-[var(--line)] bg-[var(--page)] p-4"><div><div className="text-sm font-semibold text-[var(--ink)]">Theme</div><div className="mt-1 text-xs text-[var(--muted)]">Light is the Harmoniq default; dark remains available.</div></div><button type="button" onClick={toggleTheme} className="inline-flex items-center gap-2 rounded-xl border border-[var(--line-strong)] bg-[var(--paper)] px-4 py-2 text-sm font-medium text-[var(--ink)] transition hover:border-[#2d7b4e]">{theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}{theme === "dark" ? "Dark" : "Light"}</button></div><div className="flex items-center justify-between gap-4 rounded-2xl border border-[var(--line)] bg-[var(--page)] p-4"><div><div className="text-sm font-semibold text-[var(--ink)]">Account</div><div className="mt-1 text-xs text-[var(--muted)]">End your current session.</div></div><button type="button" onClick={() => { if (confirm("Log out of your session?")) void logout(); }} className="rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-500">Log out</button></div></div></div>}
+          </>}
+        </div></section>
       </div>
     </main>
   );

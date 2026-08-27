@@ -3,22 +3,44 @@
 @tailwind utilities;
 
 :root {
+  color-scheme: light;
+  --page: #f7f8f1;
+  --paper: #fffef8;
+  --ink: #173023;
+  --muted: #69776d;
+  --line: rgba(23, 48, 35, 0.12);
+  --line-strong: rgba(23, 48, 35, 0.2);
+  --accent: #b7e33d;
+  --accent-strong: #2d7b4e;
+  --accent-soft: #e9f4c6;
+}
+
+html.dark {
   color-scheme: dark;
+  --page: #09120d;
+  --paper: #111d16;
+  --ink: #edf6e8;
+  --muted: #93a99a;
+  --line: rgba(235, 246, 232, 0.12);
+  --line-strong: rgba(235, 246, 232, 0.2);
+  --accent: #c6ed4b;
+  --accent-strong: #81d69a;
+  --accent-soft: rgba(198, 237, 75, 0.12);
 }
 
 * {
   box-sizing: border-box;
 }
 
-html {
-  background: #070a12;
+html,
+body {
+  min-height: 100%;
 }
 
 body {
   margin: 0;
-  min-height: 100vh;
-  background: #070a12;
-  color: #f1f5f9;
+  background: var(--page);
+  color: var(--ink);
   font-family:
     "Sora",
     ui-sans-serif,
@@ -27,12 +49,12 @@ body {
     BlinkMacSystemFont,
     "Segoe UI",
     sans-serif;
+  text-rendering: optimizeLegibility;
 }
 
-/* Ensure consistent custom style properties for selection highlights */
 ::selection {
-  background-color: rgba(16, 185, 129, 0.3);
-  color: #ffffff;
+  background: var(--accent);
+  color: #173023;
 }
 
 a {
@@ -46,8 +68,36 @@ input {
 }
 
 :focus-visible {
-  outline: 2px solid rgba(167, 139, 250, 0.85);
+  outline: 2px solid var(--accent-strong);
   outline-offset: 3px;
+}
+
+.studio-grid {
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--ink) 5%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--ink) 5%, transparent) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: linear-gradient(to bottom, black 0%, black 64%, transparent 100%);
+}
+
+.display-type {
+  font-family: "Iowan Old Style", "Baskerville", "Times New Roman", serif;
+}
+
+.paper-grain {
+  background-image:
+    radial-gradient(circle at 15% 20%, rgba(45, 123, 78, 0.06) 0 1px, transparent 1px),
+    radial-gradient(circle at 72% 40%, rgba(23, 48, 35, 0.04) 0 1px, transparent 1px);
+  background-size: 21px 21px, 29px 29px;
+}
+
+.signal-dash {
+  stroke-dasharray: 7 9;
+  animation: signal-drift 10s linear infinite;
+}
+
+@keyframes signal-drift {
+  to { stroke-dashoffset: -160; }
 }
 
 ::-webkit-scrollbar {
@@ -56,17 +106,28 @@ input {
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.025);
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
 }
 
 ::-webkit-scrollbar-thumb {
   border: 3px solid transparent;
   border-radius: 999px;
-  background: rgba(148, 163, 184, 0.22);
+  background: color-mix(in srgb, var(--ink) 22%, transparent);
   background-clip: padding-box;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(167, 139, 250, 0.42);
+  background: var(--accent-strong);
   background-clip: padding-box;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
