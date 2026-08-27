@@ -157,6 +157,7 @@ export async function downloadFullDocumentPdf(
       osmd = new OpenSheetMusicDisplay(host, {
         autoResize: false,
         backend: "svg",
+        alignRests: 2,
         pageFormat: "A4_P",
         drawingParameters,
         drawTitle: false,

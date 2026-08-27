@@ -159,6 +159,7 @@ export default function SheetMusicViewer({ musicXmlData, zoom = 1.0 }: SheetMusi
         osmdInstance = new OpenSheetMusicDisplay(containerRef.current, {
           autoResize: true,
           backend: "svg",
+          alignRests: 2,
           drawingParameters: "default", // Tells the engine to show all tracks/staves naturally
           drawTitle: false,
           drawSubtitle: false,

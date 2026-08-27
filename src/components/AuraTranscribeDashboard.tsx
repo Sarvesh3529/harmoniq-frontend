@@ -119,6 +119,7 @@ export function AuraTranscribeDashboard({
           osmdRef.current = new OpenSheetMusicDisplay(containerRef.current, {
             autoResize: true,
             backend: "svg",
+            alignRests: 2,
             drawTitle: false,
             drawingParameters: "compacttight",
             pageFormat: "Endless",
@@ -128,6 +129,7 @@ export function AuraTranscribeDashboard({
           }) as unknown as OSMDInstance;
         } else {
           osmdRef.current.setOptions?.({
+            alignRests: 2,
             drawingParameters: "compacttight",
             pageFormat: "Endless",
             renderSingleHorizontalStaffline: false,
