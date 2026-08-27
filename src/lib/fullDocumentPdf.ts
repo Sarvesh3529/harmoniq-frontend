@@ -147,7 +147,7 @@ export async function downloadFullDocumentPdf(
       autoResize: false,
       backend: "svg",
       pageFormat: "A4_P",
-      drawingParameters: "compacttight",
+      drawingParameters: "default",
       drawTitle: false,
       drawSubtitle: false,
       drawCredits: false,
