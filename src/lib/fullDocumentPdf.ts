@@ -107,10 +107,15 @@ function drawTempoAnnotations(
 }
 
 /**
- * Render the MusicXML in a clean, fixed A4 OSMD instance and export each OSMD
+ * Render the MusicXML in clean, fixed A4 OSMD instances and export each OSMD
  * SVG page directly to PDF. This deliberately does not capture the UI scroll
  * container: OSMD's drawer owns the complete page list, so no systems can be
  * clipped by CSS overflow or rasterized at an arbitrary viewport size.
+ *
+ * Default engraving is preferred. If it would strand a short final page, the
+ * exporter tries OSMD's less-tight compact profile, then compacttight only if
+ * necessary, and chooses the layout with the fewest pages. This keeps short
+ * scores balanced without forcing compact spacing on every score.
  *
  * OSMD's tempo text is present in the SVG but is not reliably painted by
  * svg2pdf.js. Tempo text nodes are therefore removed before conversion and
@@ -143,22 +148,46 @@ export async function downloadFullDocumentPdf(
 
   try {
     const { OpenSheetMusicDisplay } = await import("opensheetmusicdisplay");
-    osmd = new OpenSheetMusicDisplay(host, {
-      autoResize: false,
-      backend: "svg",
-      pageFormat: "A4_P",
-      drawingParameters: "default",
-      drawTitle: false,
-      drawSubtitle: false,
-      drawCredits: false,
-      renderSingleHorizontalStaffline: false,
-    }) as unknown as OsmdForExport;
+    const processedXml = preprocess ? preprocess(musicXmlData) : musicXmlData;
+    type ExportLayout = "default" | "compact" | "compacttight";
 
-    await osmd.load(preprocess ? preprocess(musicXmlData) : musicXmlData);
-    osmd.render();
-    await waitForRenderFrame();
+    const renderPages = async (drawingParameters: ExportLayout): Promise<SVGSVGElement[]> => {
+      osmd?.clear?.();
+      host.innerHTML = "";
+      osmd = new OpenSheetMusicDisplay(host, {
+        autoResize: false,
+        backend: "svg",
+        pageFormat: "A4_P",
+        drawingParameters,
+        drawTitle: false,
+        drawSubtitle: false,
+        drawCredits: false,
+        renderSingleHorizontalStaffline: false,
+      }) as unknown as OsmdForExport;
 
-    const pages = getRenderedSvgPages(host, osmd);
+      await osmd.load(processedXml);
+      osmd.render();
+      await waitForRenderFrame();
+      return getRenderedSvgPages(host, osmd);
+    };
+
+    let selectedLayout: ExportLayout = "default";
+    let bestPageCount = Number.POSITIVE_INFINITY;
+    for (const layout of ["default", "compact", "compacttight"] as const) {
+      if (layout !== "default" && bestPageCount <= 1) {
+        break;
+      }
+      const candidatePages = await renderPages(layout);
+      if (candidatePages.length === 0) {
+        throw new Error("OSMD did not render any printable score pages.");
+      }
+      if (candidatePages.length < bestPageCount) {
+        bestPageCount = candidatePages.length;
+        selectedLayout = layout;
+      }
+    }
+
+    const pages = await renderPages(selectedLayout);
     if (pages.length === 0) {
       throw new Error("OSMD did not render any printable score pages.");
     }
@@ -188,7 +217,6 @@ export async function downloadFullDocumentPdf(
 
     pdf.save(`${safeFileName(title)}.pdf`);
   } finally {
-    osmd?.clear?.();
     host.remove();
   }
 }
