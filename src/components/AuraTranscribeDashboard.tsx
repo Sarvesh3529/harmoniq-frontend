@@ -2,8 +2,7 @@
 
 import { useEffect, useId, useRef, useState, type ChangeEvent, type DragEvent } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
+import { downloadFullDocumentPdf } from "../lib/fullDocumentPdf";
 import {
   Download,
   FileAudio,
@@ -332,21 +331,7 @@ export function AuraTranscribeDashboard({
       return;
     }
 
-    const canvas = await html2canvas(containerRef.current, {
-      backgroundColor: "#ffffff",
-      scale: 2,
-      useCORS: true,
-    });
-
-    const imageData = canvas.toDataURL("image/png");
-    const pdf = new jsPDF({
-      orientation: canvas.width > canvas.height ? "landscape" : "portrait",
-      unit: "px",
-      format: [canvas.width, canvas.height],
-    });
-
-    pdf.addImage(imageData, "PNG", 0, 0, canvas.width, canvas.height);
-    pdf.save("aura-transcribe-score.pdf");
+    await downloadFullDocumentPdf(containerRef.current, "aura-transcribe-score");
   }
 
   function handleDownloadMidi() {

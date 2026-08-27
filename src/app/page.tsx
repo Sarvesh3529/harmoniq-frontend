@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
+import { downloadFullDocumentPdf } from "../lib/fullDocumentPdf";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { db } from "../lib/firebase";
@@ -340,7 +339,7 @@ export default function Dashboard() {
 
   const [isDragActive, setIsDragActive] = useState(false);
 
-  // Ref to the rendered sheet music container for PDF export
+  // Ref to the complete rendered sheet music container for PDF export
   const sheetContainerRef = useRef<HTMLDivElement | null>(null);
 
   // Sync state history relative data scoped to the active user subcollection
@@ -479,22 +478,10 @@ export default function Dashboard() {
     if (!container) return;
 
     try {
-      const canvas = await html2canvas(container, {
-        backgroundColor: "#ffffff",
-        scale: 2,
-        useCORS: true,
-      });
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF({
-        orientation: canvas.width > canvas.height ? "landscape" : "portrait",
-        unit: "px",
-        format: [canvas.width / 2, canvas.height / 2],
-      });
-      pdf.addImage(imgData, "PNG", 0, 0, canvas.width / 2, canvas.height / 2);
-      const safeName = (currentTitle || "transcription").replace(/[^a-z0-9_\-. ]/gi, "_");
-      pdf.save(`${safeName}.pdf`);
+      await downloadFullDocumentPdf(container, currentTitle || "transcription");
     } catch (err) {
-      console.error("PDF export failed:", err);
+      console.error("Full PDF export failed:", err);
+      setError("The complete sheet-music PDF could not be generated.");
     }
   }, [currentTitle]);
 
