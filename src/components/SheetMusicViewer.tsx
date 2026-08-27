@@ -16,7 +16,7 @@ const STEP_SEMITONE: Record<string, number> = {
  * Pre-processes a MusicXML string so that:
  *  - The first attributes block always has <staves>2</staves>
  *  - Clef 1 is always Treble (G / line 2) and Clef 2 is always Bass (F / line 4)
- *  - Every pitched note is assigned to staff 1 (MIDI >= 60) or staff 2 (MIDI < 60)
+ *  - Pitched notes without a valid staff assignment receive a soft pitch-based fallback
  *
  * This ensures OSMD renders the top stave with a Treble clef and the
  * bottom stave with a Bass clef, regardless of what the backend emitted.
@@ -105,9 +105,11 @@ export function enforcePianoGrandStaff(xmlString: string): string {
         const alter = parseFloat(pitchEl.querySelector("alter")?.textContent ?? "0");
         const midiPitch = (octave + 1) * 12 + (STEP_SEMITONE[step] ?? 0) + Math.round(alter);
 
-        const staffVal = midiPitch >= 60 ? "1" : "2";
-
         let staffEl = note.querySelector("staff");
+        const existingStaff = staffEl?.textContent?.trim();
+        if (existingStaff === "1" || existingStaff === "2") return;
+
+        const staffVal = midiPitch >= 60 ? "1" : "2";
         if (!staffEl) {
           staffEl = ns("staff");
           const beforeTags = ["beam", "notations", "lyrics"];
