@@ -146,6 +146,11 @@ export default function SheetMusicViewer({ musicXmlData, zoom = 1.0 }: SheetMusi
   useEffect(() => {
     if (!isClient || !containerRef.current || !musicXmlData) return;
 
+    if (!musicXmlData.trim().startsWith("<")) {
+      setError("Waiting for valid score data...");
+      return;
+    }
+
     let osmdInstance: any = null;
 
     const initOpenSheetMusicDisplay = async () => {

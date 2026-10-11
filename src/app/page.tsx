@@ -226,7 +226,7 @@ export default function Dashboard() {
     if (track.status === 'completed') {
       setStatus('completed');
       setCurrentTitle(track.title || null);
-      setCurrentSheetMusic(track.musicXmlData || `Asset Sheet Record for: ${track.title}`);
+      setCurrentSheetMusic(track.musicXmlData || null);
       // midiDataBase64 lives on the full Firestore doc; cast via transcriptions list
       const fullDoc = transcriptions.find(t => t.id === track.id) as any;
       setCurrentMidiBase64(fullDoc?.midiDataBase64 || null);
@@ -391,7 +391,7 @@ export default function Dashboard() {
           setStatus('completed');
 
           setCurrentTitle(data.title || resolvedTitle);
-          setCurrentSheetMusic(data.musicXmlData || `Backup Sheet Data asset read successfully.`);
+          setCurrentSheetMusic(data.musicXmlData || null);
           setCurrentMidiBase64(data.midiDataBase64 || null);
           setCurrentMidiUrl(data.midiUrl || null);
 
