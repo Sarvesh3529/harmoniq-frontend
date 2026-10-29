@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState, type ChangeEvent, type DragEvent } from "react";
+import dynamic from "next/dynamic";
 import { AnimatePresence, motion } from "framer-motion";
 import { downloadFullDocumentPdf } from "../lib/fullDocumentPdf";
 import {
@@ -10,14 +11,27 @@ import {
   Loader2,
   Mic,
   Moon,
+  Pencil,
   Sparkles,
   Square,
   Sun,
   Upload,
+  Eye,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { convertBlobToWavFile } from "@/lib/audioFile";
+
+// Smoosic editor — loaded client-side only (heavy DOM library)
+const SmoosicEditor = dynamic(() => import("./SmoosicEditor"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex min-h-[540px] items-center justify-center gap-3 text-sm text-slate-400">
+      <Loader2 className="h-4 w-4 animate-spin" />
+      Loading editor…
+    </div>
+  ),
+});
 
 type OSMDInstance = {
   load: (xml: string) => Promise<void>;
@@ -58,6 +72,8 @@ export function AuraTranscribeDashboard({
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDurationSeconds, setRecordingDurationSeconds] = useState(0);
   const [recordingError, setRecordingError] = useState<string | null>(null);
+  /** Controls whether we show the OSMD read-only view or the Smoosic interactive editor */
+  const [sheetViewMode, setSheetViewMode] = useState<"view" | "edit">("view");
   const containerRef = useRef<HTMLDivElement | null>(null);
   const osmdRef = useRef<OSMDInstance | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -583,17 +599,55 @@ export function AuraTranscribeDashboard({
                   </div>
 
                   <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_20px_60px_-35px_rgba(15,23,42,0.3)] transition-colors dark:border-white/10 dark:bg-white/8 dark:shadow-[0_20px_70px_-35px_rgba(15,23,42,0.9)] dark:backdrop-blur-2xl sm:p-6">
-                    <div className="flex flex-col gap-4 border-b border-slate-100 pb-5 dark:border-white/10 sm:flex-row sm:items-start sm:justify-between">
-                      <div>
+                    {/* ── Sheet Music header ──────────────────────────── */}
+                    <div className="flex flex-col gap-4 border-b border-slate-100 pb-5 dark:border-white/10 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex items-center gap-3">
                         <h2 className="text-2xl font-semibold text-slate-950 dark:text-slate-50">
                           Sheet Music
                         </h2>
+                        {/* View / Edit toggle */}
+                        <div
+                          role="group"
+                          aria-label="Sheet music display mode"
+                          className="flex items-center rounded-full border border-slate-200 bg-slate-100 p-0.5 text-xs font-medium dark:border-white/10 dark:bg-white/8"
+                        >
+                          <button
+                            id="sheet-view-tab"
+                            type="button"
+                            onClick={() => setSheetViewMode("view")}
+                            className={[
+                              "flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-all",
+                              sheetViewMode === "view"
+                                ? "bg-white text-slate-900 shadow-sm dark:bg-white/14 dark:text-slate-50"
+                                : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200",
+                            ].join(" ")}
+                            aria-pressed={sheetViewMode === "view"}
+                          >
+                            <Eye className="h-3 w-3" />
+                            View
+                          </button>
+                          <button
+                            id="sheet-edit-tab"
+                            type="button"
+                            onClick={() => setSheetViewMode("edit")}
+                            className={[
+                              "flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-all",
+                              sheetViewMode === "edit"
+                                ? "bg-indigo-600 text-white shadow-sm"
+                                : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200",
+                            ].join(" ")}
+                            aria-pressed={sheetViewMode === "edit"}
+                          >
+                            <Pencil className="h-3 w-3" />
+                            Edit
+                          </button>
+                        </div>
                       </div>
 
                       <div className="flex flex-wrap gap-3">
                         <Button
                           onClick={handleDownloadPdf}
-                          disabled={!hasResult || isRendering}
+                          disabled={!hasResult || isRendering || sheetViewMode === "edit"}
                           className="h-11 rounded-full bg-slate-900 px-5 text-white hover:bg-slate-800"
                         >
                           <Download className="mr-2 h-4 w-4" />
@@ -611,42 +665,81 @@ export function AuraTranscribeDashboard({
                       </div>
                     </div>
 
-                    <div className="relative mt-5 overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-inner transition-colors dark:border-white/10 dark:bg-slate-950/30">
-                      <AnimatePresence>
-                        {isRendering ? (
+                    {/* ── Score display area ──────────────────────────── */}
+                    <div className="relative mt-5">
+                      <AnimatePresence mode="wait">
+                        {sheetViewMode === "view" ? (
+                          /* ── OSMD read-only viewer ── */
                           <motion.div
-                            key="rendering"
+                            key="osmd-view"
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            className="absolute inset-0 z-10 flex items-center justify-center bg-white/80 backdrop-blur-sm dark:bg-slate-950/55"
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-inner transition-colors dark:border-white/10 dark:bg-slate-950/30"
                           >
-                            <div className="flex items-center gap-3 rounded-full border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-lg dark:border-white/10 dark:bg-white/12 dark:text-slate-100 dark:backdrop-blur-xl">
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                              Rendering score...
-                            </div>
+                            <AnimatePresence>
+                              {isRendering ? (
+                                <motion.div
+                                  key="rendering"
+                                  initial={{ opacity: 0 }}
+                                  animate={{ opacity: 1 }}
+                                  exit={{ opacity: 0 }}
+                                  className="absolute inset-0 z-10 flex items-center justify-center bg-white/80 backdrop-blur-sm dark:bg-slate-950/55"
+                                >
+                                  <div className="flex items-center gap-3 rounded-full border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-lg dark:border-white/10 dark:bg-white/12 dark:text-slate-100 dark:backdrop-blur-xl">
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    Rendering score...
+                                  </div>
+                                </motion.div>
+                              ) : null}
+                            </AnimatePresence>
+
+                            {!hasResult ? (
+                              <div className="flex min-h-[420px] items-center justify-center p-6 text-center text-slate-400 dark:text-slate-500 sm:min-h-[560px]">
+                                Upload a file to preview the score.
+                              </div>
+                            ) : null}
+
+                            <div
+                              id="sheet-container"
+                              ref={containerRef}
+                              className="min-h-[420px] overflow-x-auto bg-white p-4 dark:bg-white sm:min-h-[560px] sm:p-8"
+                            />
                           </motion.div>
-                        ) : null}
+                        ) : (
+                          /* ── Smoosic interactive editor ── */
+                          <motion.div
+                            key="smoosic-edit"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            {hasResult ? (
+                              <SmoosicEditor
+                                musicXmlData={musicXml}
+                                height="680px"
+                                onSave={async (updatedXml) => {
+                                  // Reflect edits back into the OSMD view as well
+                                  setMusicXml(updatedXml);
+                                }}
+                              />
+                            ) : (
+                              <div className="flex min-h-[540px] items-center justify-center rounded-[24px] border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-slate-400 dark:border-white/10 dark:bg-white/4">
+                                Generate a score first to enable editing.
+                              </div>
+                            )}
+                          </motion.div>
+                        )}
                       </AnimatePresence>
 
-                      {!hasResult ? (
-                        <div className="flex min-h-[420px] items-center justify-center p-6 text-center text-slate-400 dark:text-slate-500 sm:min-h-[560px]">
-                          Upload a file to preview the score.
+                      {renderError && sheetViewMode === "view" ? (
+                        <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                          {renderError}
                         </div>
                       ) : null}
-
-                      <div
-                        id="sheet-container"
-                        ref={containerRef}
-                        className="min-h-[420px] overflow-x-auto bg-white p-4 dark:bg-white sm:min-h-[560px] sm:p-8"
-                      />
                     </div>
-
-                    {renderError ? (
-                      <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-                        {renderError}
-                      </div>
-                    ) : null}
                   </div>
                 </motion.div>
               )}

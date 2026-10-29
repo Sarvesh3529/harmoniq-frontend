@@ -20,6 +20,7 @@
     "opensheetmusicdisplay": "^1.9.9",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "smoosic": "^2.0.3",
     "svg2pdf.js": "^2.7.0"
   },
   "devDependencies": {

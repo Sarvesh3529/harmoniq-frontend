@@ -131,3 +131,41 @@ input {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ── Smoosic interactive editor overrides ──────────────────────────────────────
+   Smoosic injects its own SVG canvases, toolbars, and dialogs directly into
+   #smoosic-inner-container. These rules keep it tidy inside our sheet panel.
+   ────────────────────────────────────────────────────────────────────────────── */
+#smoosic-inner-container {
+  position: relative;
+  background: #ffffff;
+}
+#smoosic-inner-container > div {
+  min-height: 100%;
+}
+#smoosic-inner-container svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+/* Selected note highlight — indigo accent */
+#smoosic-inner-container .sel-text,
+#smoosic-inner-container .highlighted {
+  fill: #4f46e5 !important;
+}
+#smoosic-inner-container .smoosicCanvas {
+  background: #ffffff;
+}
+/* Dialogs float above our UI chrome */
+.smoosic-dialog-wrapper,
+.smo-score-dialog,
+.smo-menu-container {
+  z-index: 9999 !important;
+}
+#smoosic-inner-container:focus {
+  outline: none;
+}
+#smoosic-inner-container:focus-visible {
+  outline: 2px solid #4f46e5;
+  outline-offset: -2px;
+}
