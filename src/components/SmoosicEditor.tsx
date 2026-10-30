@@ -38,6 +38,7 @@ interface SmoosicEditorProps {
 
 // Smoosic types (minimal, to avoid importing the heavy type bundle at type-check time)
 type SuiApplicationType = {
+  score?: unknown;
   view?: {
     changeScore: (score: unknown) => Promise<void>;
     renderer: { renderPromise: () => Promise<void> };
@@ -45,12 +46,26 @@ type SuiApplicationType = {
       selections?: unknown[];
     };
     crescendoMode?: unknown;
-    // keyboard shortcut wrappers
-    upPitch?: () => Promise<void>;
-    downPitch?: () => Promise<void>;
     deleteNote?: () => Promise<void>;
+    transposeSelections?: (semitones: number) => Promise<void>;
   };
 };
+
+/** Smoosic v2 converts a parsed XML document, not an { xml } constructor value. */
+function parseMusicXml(Smoosic: any, musicXml: string): unknown {
+  const document = new DOMParser().parseFromString(musicXml, "application/xml");
+  if (document.querySelector("parsererror")) {
+    throw new Error("The generated MusicXML is invalid.");
+  }
+  return Smoosic.XmlToSmo.convert(document);
+}
+
+function scoreToMusicXml(Smoosic: any, app: SuiApplicationType): string {
+  const view = app.view as any;
+  const score = view?.score ?? view?.storeScore ?? view?.renderer?.score ?? app.score;
+  if (!score) throw new Error("Cannot access score object.");
+  return new XMLSerializer().serializeToString(Smoosic.SmoToXml.convert(score));
+}
 
 // ─── Tone-free Web Audio piano synth ──────────────────────────────────────────
 
@@ -182,44 +197,25 @@ export default function SmoosicEditor({
 
         setStatusMsg("Parsing MusicXML…");
 
-        // Parse XML → SmoScore via Smoosic's XmlToSmo converter
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const XmlToSmo: any = Smoosic.XmlToSmo;
+        // Full application mode supplies Smoosic's selectable-note editor UI.
+        // Its initialScore parser also correctly handles MusicXML.
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const SuiApplication: any = Smoosic.SuiApplication;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const SmoScore: any = Smoosic.SmoScore;
-
-        // Parse the MusicXML string
-        let score: unknown;
-        try {
-          const parser = new XmlToSmo({ xml: xmlDataRef.current });
-          score = parser.convert();
-        } catch (parseErr) {
-          console.warn("[SmoosicEditor] XmlToSmo failed, using default score:", parseErr);
-          score = SmoScore.getDefaultScore(SmoScore.defaults, null);
-        }
 
         if (cancelled || !containerRef.current) return;
         setStatusMsg("Starting interactive editor…");
 
-        // Initialise Smoosic in library mode
+        // Initialise Smoosic with its editor controls and note-selection handlers.
         const app: SuiApplicationType = await SuiApplication.configure({
-          mode: "library",
+          mode: "application",
           domContainer: containerRef.current,
           idleRedrawTime: 1,
           demonPollTime: 1,
-          initialScore: undefined,
+          initialScore: xmlDataRef.current,
         });
 
         if (cancelled) return;
         appRef.current = app;
-
-        // Load our score
-        if (app.view) {
-          await app.view.changeScore(score);
-          await app.view.renderer.renderPromise();
-        }
 
         setHasScore(true);
         setIsLoading(false);
@@ -253,18 +249,7 @@ export default function SmoosicEditor({
       setStatusMsg("Reloading score…");
       try {
         const Smoosic = await import("smoosic");
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const XmlToSmo: any = Smoosic.XmlToSmo;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const SmoScore: any = Smoosic.SmoScore;
-
-        let score: unknown;
-        try {
-          const parser = new XmlToSmo({ xml: musicXmlData });
-          score = parser.convert();
-        } catch {
-          score = SmoScore.getDefaultScore(SmoScore.defaults, null);
-        }
+        const score = parseMusicXml(Smoosic, musicXmlData);
         await app.view!.changeScore(score);
         await app.view!.renderer.renderPromise();
         setHasScore(true);
@@ -295,7 +280,7 @@ export default function SmoosicEditor({
       if (e.key === "ArrowUp") {
         e.preventDefault();
         try {
-          await view.upPitch?.();
+          await view.transposeSelections?.(1);
           // Play audio preview of new pitch
           const sels = view.tracker?.selections ?? [];
           if (sels.length) {
@@ -308,7 +293,7 @@ export default function SmoosicEditor({
       } else if (e.key === "ArrowDown") {
         e.preventDefault();
         try {
-          await view.downPitch?.();
+          await view.transposeSelections?.(-1);
           const sels = view.tracker?.selections ?? [];
           if (sels.length) {
             const midi = extractMidiFromSelection(sels);
@@ -365,15 +350,7 @@ export default function SmoosicEditor({
     setIsExporting(true);
     try {
       const Smoosic = await import("smoosic");
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const SmoToXml: any = Smoosic.SmoToXml;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const view = app.view as any;
-      const score = view.score ?? view.storeScore ?? view.renderer?.score;
-      if (!score) throw new Error("Cannot access score object.");
-
-      const exporter = new SmoToXml(score);
-      const xmlStr: string = exporter.convert();
+      const xmlStr = scoreToMusicXml(Smoosic, app);
 
       // Trigger download
       const blob = new Blob([xmlStr], { type: "application/xml;charset=utf-8" });
@@ -398,15 +375,7 @@ export default function SmoosicEditor({
     setIsSaving(true);
     try {
       const Smoosic = await import("smoosic");
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const SmoToXml: any = Smoosic.SmoToXml;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const view = app.view as any;
-      const score = view.score ?? view.storeScore ?? view.renderer?.score;
-      if (!score) throw new Error("Cannot access score object.");
-
-      const exporter = new SmoToXml(score);
-      const xmlStr: string = exporter.convert();
+      const xmlStr = scoreToMusicXml(Smoosic, app);
       await onSave(xmlStr);
     } catch (err) {
       console.error("[SmoosicEditor] save error:", err);
