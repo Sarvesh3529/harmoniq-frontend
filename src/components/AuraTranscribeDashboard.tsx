@@ -73,7 +73,8 @@ export function AuraTranscribeDashboard({
   const [recordingDurationSeconds, setRecordingDurationSeconds] = useState(0);
   const [recordingError, setRecordingError] = useState<string | null>(null);
   /** Controls whether we show the OSMD read-only view or the Smoosic interactive editor */
-  const [sheetViewMode, setSheetViewMode] = useState<"view" | "edit">("view");
+  // A generated score should open directly in the correction interface.
+  const [sheetViewMode, setSheetViewMode] = useState<"view" | "edit">("edit");
   const containerRef = useRef<HTMLDivElement | null>(null);
   const osmdRef = useRef<OSMDInstance | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
